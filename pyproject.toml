@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "sciml_notebook"
+version = "0.1.0"
+description = "Scientific Machine Learning"
+authors = ["Krishna Kumar <krishnak@utexas.edu>"]
+package-mode = false
+
+[tool.poetry.dependencies]
+python = ">=3.9,<3.12"  # JAX currently supports Python 3.9-3.11
+numpy = "^1.24.0"
+matplotlib = "^3.7.0"
+ipython = "^8.0.0"
+jax = {extras = ["cpu"], version = "^0.4.13"}
+jaxlib = "^0.4.13"
+flax = "^0.7.0"
+optax = "^0.1.7"
+imageio = "^2.31.0"
+ipykernel = "^6.29.5"
+tqdm = "^4.66.6"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
