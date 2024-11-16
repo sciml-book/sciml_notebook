@@ -1,7 +1,7 @@
 # Book settings
 # Learn more at https://jupyterbook.org/customize/config.html
 
-title: Scientific Machine Learning: Foundations, Methods, and Applications
+title: "Scientific Machine Learning: Foundations, Methods, and Applications"
 author: Krishna Kumar
 logo: sciml-logo.webp
 copyright: "2024"
