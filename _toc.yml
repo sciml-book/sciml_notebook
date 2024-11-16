@@ -3,7 +3,12 @@
 
 format: jb-book
 root: README
-chapters:
-  - file: pinns/00-oscillator.ipynb
-  - file: pinns/01-static.ipynb
-  - file: pinns/02-linear-elastic-fixed.ipynb
+parts:
+  - caption: Physics Informed Neural Networks
+    chapters:
+    - file: pinns/pinns.md
+    - file: pinns/00-oscillator.ipynb
+    - file: pinns/jax/00-oscillator.ipynb
+    - file: pinns/01-static.ipynb
+    - file: pinns/02-linear-elastic-fixed.ipynb  
+    
