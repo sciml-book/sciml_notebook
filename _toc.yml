@@ -1,0 +1,9 @@
+# Table of contents
+# Learn more at https://jupyterbook.org/customize/toc.html
+
+format: jb-book
+root: README
+chapters:
+  - file: pinns/00-oscillator.ipynb
+  - file: pinns/01-static.ipynb
+  - file: pinns/02-linear-elastic-fixed.ipynb
