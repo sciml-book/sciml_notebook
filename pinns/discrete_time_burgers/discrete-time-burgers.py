@@ -320,7 +320,7 @@ class DiscreteTimePINNs:
     def plot_solution(self):
         """Plot the solution, including exact solution and predictions."""
         fig = plt.figure(figsize=(12, 10))
-        
+        fsize = 12
         # Set up GridSpec
         gs0 = gridspec.GridSpec(1, 2)
         gs0.update(top=1-0.06, bottom=1-1/2 + 0.1, left=0.15, right=0.85, wspace=0)
@@ -348,7 +348,7 @@ class DiscreteTimePINNs:
         
         ax.set_xlabel('$t$')
         ax.set_ylabel('$x$')
-        ax.set_title('$u(t,x)$', fontsize=10)
+        ax.set_title('$u(t,x)$', fontsize=fsize)
         
         # Plot initial condition
         ax = plt.subplot(gs1[0, 0])
@@ -356,7 +356,7 @@ class DiscreteTimePINNs:
         ax.plot(self.x0.cpu().detach().numpy(), self.u0, 'rx', linewidth=2, label='Data')
         ax.set_xlabel('$x$')
         ax.set_ylabel('$u(t,x)$')
-        ax.set_title('$t = %.2f$' % t0_scalar, fontsize=10)
+        ax.set_title('$t = %.2f$' % t0_scalar, fontsize=fsize)
         ax.set_xlim([self.config['lb']-0.1, self.config['ub']+0.1])
         ax.legend(loc='upper center', bbox_to_anchor=(0.3, -0.25), ncol=2, frameon=False)
         
@@ -370,9 +370,9 @@ class DiscreteTimePINNs:
                 linewidth=2, label='Prediction')
         ax.set_xlabel('$x$')
         ax.set_ylabel('$u(t,x)$')
-        ax.set_title('$t = %.2f$' % t1_scalar, fontsize=10)
+        ax.set_title('$t = %.2f$' % t1_scalar, fontsize=fsize)
         ax.set_xlim([self.config['lb']-0.1, self.config['ub']+0.1])
-        ax.legend(loc='upper center', bbox_to_anchor=(0.1, -0.25), ncol=2, frameon=False)
+        ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.25), ncol=2, frameon=False)
         
         plt.savefig('results/burgers_discrete_time.pdf')
         plt.show()
