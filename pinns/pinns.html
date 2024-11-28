@@ -162,14 +162,15 @@ const thebe_selector_output = ".output, .cell_output"
                 </a>
             </li>
         </ul>
-        <p aria-level="2" class="caption" role="heading"><span class="caption-text">Physics Informed Neural Networks</span></p>
-<ul class="current nav bd-sidenav">
-<li class="toctree-l1 current active"><a class="current reference internal" href="#">Physics Informed Neural Networks</a></li>
-<li class="toctree-l1"><a class="reference internal" href="00-oscillator.html">PINNs: 00 - Oscillator (PyTorch)</a></li>
+        <ul class="current nav bd-sidenav">
+<li class="toctree-l1 current active has-children"><a class="current reference internal" href="#">Physics Informed Neural Networks</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-1"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="00-oscillator.html">PINNs: 00 - Oscillator (PyTorch)</a></li>
 
-<li class="toctree-l1"><a class="reference internal" href="jax/00-oscillator.html">PINNs: 01 - Oscillator (JAX)</a></li>
-<li class="toctree-l1"><a class="reference internal" href="01-static.html">PINNs: 01 - Static (PyTorch)</a></li>
-<li class="toctree-l1"><a class="reference internal" href="02-linear-elastic-fixed.html">PINNs: 02 - Linear Elastic (PyTorch)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="jax/00-oscillator.html">PINNs: 01 - Oscillator (JAX)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="01-static.html">PINNs: 01 - Static (PyTorch)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="02-linear-elastic-fixed.html">PINNs: 02 - Linear Elastic (PyTorch)</a></li>
+</ul>
+</li>
 </ul>
 
     </div>
@@ -365,8 +366,9 @@ document.write(`
             </div>
             <nav aria-label="Page">
                 <ul class="visible nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#pytorch">PyTorch</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#jax">JAX</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#data-driven-vs-physics-informed-neural-networks-1d-damped-harmonic-oscillator">Data-driven vs Physics-informed Neural Networks (1D damped harmonic oscillator)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#weak-boundary-enforcement-1d-beam">Weak-boundary enforcement (1D beam)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#strong-boundary-enforcement-and-enery-minimization-2d-linear-elastic-beam">Strong-boundary enforcement and enery minimization (2D linear elastic beam)</a></li>
 </ul>
             </nav>
         </div>
@@ -380,20 +382,39 @@ document.write(`
                   
   <section class="tex2jax_ignore mathjax_ignore" id="physics-informed-neural-networks">
 <h1>Physics Informed Neural Networks<a class="headerlink" href="#physics-informed-neural-networks" title="Permalink to this heading">#</a></h1>
-<section id="pytorch">
-<h2>PyTorch<a class="headerlink" href="#pytorch" title="Permalink to this heading">#</a></h2>
+<section id="data-driven-vs-physics-informed-neural-networks-1d-damped-harmonic-oscillator">
+<h2>Data-driven vs Physics-informed Neural Networks (1D damped harmonic oscillator)<a class="headerlink" href="#data-driven-vs-physics-informed-neural-networks-1d-damped-harmonic-oscillator" title="Permalink to this heading">#</a></h2>
 <ul class="simple">
-<li><p><a class="reference internal" href="00-oscillator.html"><span class="doc std std-doc">00-oscillator.ipynb</span></a></p></li>
-<li><p><a class="reference internal" href="01-static.html"><span class="doc std std-doc">01-static.ipynb</span></a></p></li>
-<li><p><a class="reference internal" href="02-linear-elastic-fixed.html"><span class="doc std std-doc">02-linear-elastic-fixed.ipynb</span></a></p></li>
+<li><p><a class="reference internal" href="00-oscillator.html"><span class="doc std std-doc">PINNs Oscillator</span></a></p>
+<ul>
+<li><p>Pytorch <a class="reference external" href="https://colab.research.google.com/github/sciml-book/sciml_notebook/blob/main/pinns/00-oscillator.ipynb"><img alt="Open in Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a></p></li>
+<li><p>JAX <a class="reference external" href="https://colab.research.google.com/github/sciml-book/sciml_notebook/blob/main/pinns/jax/00-oscillator.ipynb"><img alt="Open in Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a></p></li>
+</ul>
+</li>
 </ul>
 </section>
-<section id="jax">
-<h2>JAX<a class="headerlink" href="#jax" title="Permalink to this heading">#</a></h2>
+<section id="weak-boundary-enforcement-1d-beam">
+<h2>Weak-boundary enforcement (1D beam)<a class="headerlink" href="#weak-boundary-enforcement-1d-beam" title="Permalink to this heading">#</a></h2>
 <ul class="simple">
-<li><p><a class="reference internal" href="jax/00-oscillator.html"><span class="doc std std-doc">00-oscillator.ipynb</span></a></p></li>
+<li><p><a class="reference internal" href="01-static.html"><span class="doc std std-doc">Static Beam</span></a></p>
+<ul>
+<li><p>PyTorch <a class="reference external" href="https://colab.research.google.com/github/sciml-book/sciml_notebook/blob/main/pinns/01-static.ipynb"><img alt="Open in Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a></p></li>
+</ul>
+</li>
 </ul>
 </section>
+<section id="strong-boundary-enforcement-and-enery-minimization-2d-linear-elastic-beam">
+<h2>Strong-boundary enforcement and enery minimization (2D linear elastic beam)<a class="headerlink" href="#strong-boundary-enforcement-and-enery-minimization-2d-linear-elastic-beam" title="Permalink to this heading">#</a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="02-linear-elastic-fixed.html"><span class="doc std std-doc">2D Linear Elastic Beam</span></a></p>
+<ul>
+<li><p>PyTorch <a class="reference external" href="https://colab.research.google.com/github/sciml-book/sciml_notebook/blob/main/pinns/02-linear-elastic-fixed.ipynb"><img alt="Open in Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a></p></li>
+</ul>
+</li>
+</ul>
+</section>
+<div class="toctree-wrapper compound">
+</div>
 </section>
 
     <script type="text/x-thebe-config">
@@ -459,8 +480,9 @@ document.write(`
   </div>
   <nav class="bd-toc-nav page-toc">
     <ul class="visible nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#pytorch">PyTorch</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#jax">JAX</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#data-driven-vs-physics-informed-neural-networks-1d-damped-harmonic-oscillator">Data-driven vs Physics-informed Neural Networks (1D damped harmonic oscillator)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#weak-boundary-enforcement-1d-beam">Weak-boundary enforcement (1D beam)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#strong-boundary-enforcement-and-enery-minimization-2d-linear-elastic-beam">Strong-boundary enforcement and enery minimization (2D linear elastic beam)</a></li>
 </ul>
   </nav></div>
 
