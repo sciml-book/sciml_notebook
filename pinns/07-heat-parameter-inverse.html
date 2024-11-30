@@ -563,7 +563,7 @@ document.write(`
         <span class="n">x_numpy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
         
         <span class="n">ax1</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x_numpy</span><span class="p">,</span> <span class="n">T_exact</span><span class="p">,</span> 
-                <span class="n">color</span><span class="o">=</span><span class="s1">&#39;#2E86C1&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">2.5</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Exact Solution&#39;</span><span class="p">)</span>
+                <span class="n">color</span><span class="o">=</span><span class="s1">&#39;#7570b3&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">2.5</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Exact Solution&#39;</span><span class="p">)</span>
         <span class="n">ax1</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x_numpy</span><span class="p">,</span> <span class="n">T_pred</span><span class="p">,</span> 
                 <span class="n">color</span><span class="o">=</span><span class="s1">&#39;#E74C3C&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;--&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Predicted Solution&#39;</span><span class="p">)</span>
         
@@ -587,7 +587,7 @@ document.write(`
         <span class="n">iterations</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kappa_history</span><span class="p">))</span>
         
         <span class="c1"># Plot real value</span>
-        <span class="n">ax2</span><span class="o">.</span><span class="n">axhline</span><span class="p">(</span><span class="n">y</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;#2E86C1&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> 
+        <span class="n">ax2</span><span class="o">.</span><span class="n">axhline</span><span class="p">(</span><span class="n">y</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;#7570b3&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> 
                     <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Real κ value&#39;</span><span class="p">)</span>
         
         <span class="c1"># Plot predicted values</span>
@@ -657,12 +657,12 @@ document.write(`
 <div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Using device: cpu
 </pre></div>
 </div>
-<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Training: 100%|█████████████████| 6000/6000 [00:10&lt;00:00, 550.52it/s, loss=0.000010, kappa=0.499973]
-/var/folders/w8/xz590jyd7r36zmxcspgzj3z40000gn/T/ipykernel_52669/823714267.py:227: UserWarning: This figure includes Axes that are not compatible with tight_layout, so results might be incorrect.
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Training: 100%|█████████████████| 6000/6000 [00:10&lt;00:00, 568.19it/s, loss=0.000010, kappa=0.499973]
+/var/folders/w8/xz590jyd7r36zmxcspgzj3z40000gn/T/ipykernel_72882/4194859664.py:227: UserWarning: This figure includes Axes that are not compatible with tight_layout, so results might be incorrect.
   plt.tight_layout()
 </pre></div>
 </div>
-<img alt="../_images/dc1c1438ee32d7952f6e12f10a379bac6297bce67f4dc373916bd1ddb6a46fbf.png" src="../_images/dc1c1438ee32d7952f6e12f10a379bac6297bce67f4dc373916bd1ddb6a46fbf.png" />
+<img alt="../_images/cb54df5ae13d1e0ac9ae345e5690e720d03e7ebe8e9a9bdfdd4df5ca9d2e7b78.png" src="../_images/cb54df5ae13d1e0ac9ae345e5690e720d03e7ebe8e9a9bdfdd4df5ca9d2e7b78.png" />
 </div>
 </div>
 
