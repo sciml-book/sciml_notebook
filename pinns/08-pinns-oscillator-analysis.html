@@ -1325,6 +1325,752 @@ PINN Lipschitz Constant: 17.1951
 <img alt="../_images/b0b77066bc4a57e0c5058b8e03aa5f9ed477c41ca99762730bc4ba363bfa4f8c.png" src="../_images/b0b77066bc4a57e0c5058b8e03aa5f9ed477c41ca99762730bc4ba363bfa4f8c.png" />
 </div>
 </div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
+<span class="kn">import</span> <span class="nn">torch.optim</span> <span class="k">as</span> <span class="nn">optim</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">from</span> <span class="nn">tqdm</span> <span class="kn">import</span> <span class="n">tqdm</span>
+
+<span class="k">class</span> <span class="nc">HarmonicOscillator</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">damping_coefficient</span><span class="p">,</span> <span class="n">natural_frequency</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">d</span> <span class="o">=</span> <span class="n">damping_coefficient</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">w0</span> <span class="o">=</span> <span class="n">natural_frequency</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">d</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">w0</span><span class="p">,</span> <span class="s2">&quot;Damping coefficient must be less than natural frequency for underdamped oscillator&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">w</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">w0</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">d</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">phi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arctan</span><span class="p">(</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">d</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">w</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">A</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">phi</span><span class="p">))</span>
+        
+    <span class="k">def</span> <span class="nf">analytical_solution</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Analytical solution to the 1D underdamped harmonic oscillator problem.&quot;&quot;&quot;</span>
+        <span class="n">cos_part</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">phi</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">w</span> <span class="o">*</span> <span class="n">t</span><span class="p">)</span>
+        <span class="n">exp_part</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">d</span> <span class="o">*</span> <span class="n">t</span><span class="p">)</span>
+        <span class="n">u</span> <span class="o">=</span> <span class="n">exp_part</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">A</span> <span class="o">*</span> <span class="n">cos_part</span>
+        <span class="k">return</span> <span class="n">u</span>
+    
+    <span class="k">def</span> <span class="nf">generate_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">noise_level</span><span class="o">=</span><span class="mf">0.0</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Generates training data for the oscillator with optional noise.&quot;&quot;&quot;</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">500</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">u</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">analytical_solution</span><span class="p">(</span><span class="n">t</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">t_data</span> <span class="o">=</span> <span class="n">t</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">200</span><span class="p">:</span><span class="mi">20</span><span class="p">]</span>
+        <span class="n">u_data</span> <span class="o">=</span> <span class="n">u</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">200</span><span class="p">:</span><span class="mi">20</span><span class="p">]</span>
+        <span class="c1"># Add noise to the data</span>
+        <span class="n">noise</span> <span class="o">=</span> <span class="n">noise_level</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="o">*</span><span class="n">u_data</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="n">u_data_noisy</span> <span class="o">=</span> <span class="n">u_data</span> <span class="o">+</span> <span class="n">noise</span>
+        <span class="k">return</span> <span class="n">t</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">t_data</span><span class="p">,</span> <span class="n">u_data_noisy</span>
+
+<span class="k">def</span> <span class="nf">calculate_errors</span><span class="p">(</span><span class="n">u_pred</span><span class="p">,</span> <span class="n">u_exact</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate multiple error metrics between predicted and exact solutions.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        u_pred: Predicted solution values</span>
+<span class="sd">        u_exact: Exact solution values</span>
+<span class="sd">        </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        mse: Mean squared error</span>
+<span class="sd">        l2_error: L2 (root mean square) error</span>
+<span class="sd">        max_error: Maximum absolute error</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">mse</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">((</span><span class="n">u_pred</span> <span class="o">-</span> <span class="n">u_exact</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">l2_error</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">mse</span><span class="p">)</span>  <span class="c1"># Root mean square error</span>
+    <span class="n">max_error</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">u_pred</span> <span class="o">-</span> <span class="n">u_exact</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">mse</span><span class="p">,</span> <span class="n">l2_error</span><span class="p">,</span> <span class="n">max_error</span>
+
+<span class="k">class</span> <span class="nc">NeuralNetwork</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">layer_sizes</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">NeuralNetwork</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="n">layers</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">in_size</span><span class="p">,</span> <span class="n">out_size</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">layer_sizes</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">layer_sizes</span><span class="p">[</span><span class="mi">1</span><span class="p">:]):</span>
+            <span class="n">layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">in_size</span><span class="p">,</span> <span class="n">out_size</span><span class="p">))</span>
+            <span class="n">layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Tanh</span><span class="p">())</span>
+        <span class="n">layers</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>  <span class="c1"># Remove the last activation function</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span><span class="o">*</span><span class="n">layers</span><span class="p">)</span>
+        
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">pinn_loss</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">t_data</span><span class="p">,</span> <span class="n">u_data</span><span class="p">,</span> <span class="n">t_physics</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Computes the loss for PINN, including data and physics losses.&quot;&quot;&quot;</span>
+    <span class="c1"># Data loss</span>
+    <span class="n">u_pred</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">t_data</span><span class="p">)</span>
+    <span class="n">loss_data</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">MSELoss</span><span class="p">()(</span><span class="n">u_pred</span><span class="p">,</span> <span class="n">u_data</span><span class="p">)</span>
+
+    <span class="c1"># Physics loss</span>
+    <span class="n">t_physics</span> <span class="o">=</span> <span class="n">t_physics</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">requires_grad_</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">u_physics</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">t_physics</span><span class="p">)</span>
+
+    <span class="n">du_dt</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">autograd</span><span class="o">.</span><span class="n">grad</span><span class="p">(</span><span class="n">u_physics</span><span class="p">,</span> <span class="n">t_physics</span><span class="p">,</span> <span class="n">grad_outputs</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">u_physics</span><span class="p">),</span>
+                                <span class="n">create_graph</span><span class="o">=</span><span class="kc">True</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">d2u_dt2</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">autograd</span><span class="o">.</span><span class="n">grad</span><span class="p">(</span><span class="n">du_dt</span><span class="p">,</span> <span class="n">t_physics</span><span class="p">,</span> <span class="n">grad_outputs</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">du_dt</span><span class="p">),</span>
+                                  <span class="n">create_graph</span><span class="o">=</span><span class="kc">True</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="n">physics</span> <span class="o">=</span> <span class="n">d2u_dt2</span> <span class="o">+</span> <span class="n">mu</span> <span class="o">*</span> <span class="n">du_dt</span> <span class="o">+</span> <span class="n">k</span> <span class="o">*</span> <span class="n">u_physics</span>
+    <span class="n">loss_physics</span> <span class="o">=</span> <span class="mf">1e-4</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">physics</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">loss_data</span> <span class="o">+</span> <span class="n">loss_physics</span>
+
+<span class="k">def</span> <span class="nf">train_standard_nn</span><span class="p">(</span><span class="n">ho</span><span class="p">,</span> <span class="n">noise_level</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">num_steps</span><span class="o">=</span><span class="mi">1000</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Trains a standard neural network and performs error analysis.&quot;&quot;&quot;</span>
+    <span class="n">t</span><span class="p">,</span> <span class="n">u_exact</span><span class="p">,</span> <span class="n">t_data</span><span class="p">,</span> <span class="n">u_data</span> <span class="o">=</span> <span class="n">ho</span><span class="o">.</span><span class="n">generate_data</span><span class="p">(</span><span class="n">noise_level</span><span class="o">=</span><span class="n">noise_level</span><span class="p">)</span>
+
+    <span class="c1"># Initialize neural network model</span>
+    <span class="n">layer_sizes</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">NeuralNetwork</span><span class="p">(</span><span class="n">layer_sizes</span><span class="p">)</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">train</span><span class="p">()</span>
+
+    <span class="c1"># Prepare data</span>
+    <span class="n">t_data_tensor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">t_data</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="n">u_data_tensor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">u_data</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="n">t_full_tensor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+
+    <span class="c1"># Define optimizer and loss function</span>
+    <span class="n">learning_rate</span> <span class="o">=</span> <span class="mf">1e-3</span>
+    <span class="n">optimizer</span> <span class="o">=</span> <span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span> <span class="n">lr</span><span class="o">=</span><span class="n">learning_rate</span><span class="p">)</span>
+    <span class="n">criterion</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">MSELoss</span><span class="p">()</span>
+
+    <span class="c1"># Training loop</span>
+    <span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_steps</span><span class="p">):</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">train</span><span class="p">()</span>
+        <span class="n">optimizer</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
+        <span class="n">u_pred</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">t_data_tensor</span><span class="p">)</span>
+        <span class="n">loss</span> <span class="o">=</span> <span class="n">criterion</span><span class="p">(</span><span class="n">u_pred</span><span class="p">,</span> <span class="n">u_data_tensor</span><span class="p">)</span>
+        <span class="n">loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
+        <span class="n">optimizer</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+
+    <span class="c1"># Evaluate model</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+    <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+        <span class="n">u_pred_full</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">t_full_tensor</span><span class="p">)</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+    
+    <span class="c1"># Calculate all error metrics</span>
+    <span class="n">mse</span><span class="p">,</span> <span class="n">l2_error</span><span class="p">,</span> <span class="n">max_error</span> <span class="o">=</span> <span class="n">calculate_errors</span><span class="p">(</span><span class="n">u_pred_full</span><span class="p">,</span> <span class="n">u_exact</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">mse</span><span class="p">,</span> <span class="n">l2_error</span><span class="p">,</span> <span class="n">max_error</span><span class="p">,</span> <span class="n">u_pred_full</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">u_exact</span><span class="p">,</span> <span class="n">t_data</span><span class="p">,</span> <span class="n">u_data</span>
+
+<span class="k">def</span> <span class="nf">train_pinn</span><span class="p">(</span><span class="n">ho</span><span class="p">,</span> <span class="n">noise_level</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">num_steps</span><span class="o">=</span><span class="mi">20000</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Trains a physics-informed neural network and performs error analysis.&quot;&quot;&quot;</span>
+    <span class="n">t</span><span class="p">,</span> <span class="n">u_exact</span><span class="p">,</span> <span class="n">t_data</span><span class="p">,</span> <span class="n">u_data</span> <span class="o">=</span> <span class="n">ho</span><span class="o">.</span><span class="n">generate_data</span><span class="p">(</span><span class="n">noise_level</span><span class="o">=</span><span class="n">noise_level</span><span class="p">)</span>
+
+    <span class="c1"># Physics points for PINN</span>
+    <span class="n">t_physics</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">30</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">mu</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">ho</span><span class="o">.</span><span class="n">d</span>
+    <span class="n">k_param</span> <span class="o">=</span> <span class="n">ho</span><span class="o">.</span><span class="n">w0</span><span class="o">**</span><span class="mi">2</span>
+
+    <span class="c1"># Initialize neural network model</span>
+    <span class="n">layer_sizes</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">NeuralNetwork</span><span class="p">(</span><span class="n">layer_sizes</span><span class="p">)</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">train</span><span class="p">()</span>
+
+    <span class="c1"># Prepare data</span>
+    <span class="n">t_data_tensor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">t_data</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="n">u_data_tensor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">u_data</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="n">t_full_tensor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="n">t_physics_tensor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">t_physics</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="n">mu_tensor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">mu</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="n">k_param_tensor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">k_param</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+
+    <span class="c1"># Define optimizer</span>
+    <span class="n">learning_rate</span> <span class="o">=</span> <span class="mf">1e-4</span>
+    <span class="n">optimizer</span> <span class="o">=</span> <span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span> <span class="n">lr</span><span class="o">=</span><span class="n">learning_rate</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_steps</span><span class="p">):</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">train</span><span class="p">()</span>
+        <span class="n">optimizer</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
+
+        <span class="n">loss</span> <span class="o">=</span> <span class="n">pinn_loss</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">t_data_tensor</span><span class="p">,</span> <span class="n">u_data_tensor</span><span class="p">,</span> <span class="n">t_physics_tensor</span><span class="p">,</span> <span class="n">mu_tensor</span><span class="p">,</span> <span class="n">k_param_tensor</span><span class="p">)</span>
+        <span class="n">loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
+        <span class="n">optimizer</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+
+    <span class="c1"># Evaluate model</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+    <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+        <span class="n">u_pred_full</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">t_full_tensor</span><span class="p">)</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+    
+    <span class="c1"># Calculate all error metrics</span>
+    <span class="n">mse</span><span class="p">,</span> <span class="n">l2_error</span><span class="p">,</span> <span class="n">max_error</span> <span class="o">=</span> <span class="n">calculate_errors</span><span class="p">(</span><span class="n">u_pred_full</span><span class="p">,</span> <span class="n">u_exact</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">mse</span><span class="p">,</span> <span class="n">l2_error</span><span class="p">,</span> <span class="n">max_error</span><span class="p">,</span> <span class="n">u_pred_full</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">u_exact</span><span class="p">,</span> <span class="n">t_data</span><span class="p">,</span> <span class="n">u_data</span>
+
+<span class="k">def</span> <span class="nf">stability_analysis</span><span class="p">():</span>
+    <span class="c1"># Initialize harmonic oscillator</span>
+    <span class="n">ho</span> <span class="o">=</span> <span class="n">HarmonicOscillator</span><span class="p">(</span><span class="n">damping_coefficient</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">natural_frequency</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+    <span class="n">noise_levels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.11</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">)</span>  <span class="c1"># Noise levels from 0% to 10%</span>
+    
+    <span class="c1"># Initialize arrays for all error metrics</span>
+    <span class="n">errors_standard_nn</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;mse&#39;</span><span class="p">:</span> <span class="p">[],</span> <span class="s1">&#39;l2&#39;</span><span class="p">:</span> <span class="p">[],</span> <span class="s1">&#39;max&#39;</span><span class="p">:</span> <span class="p">[]}</span>
+    <span class="n">errors_pinn</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;mse&#39;</span><span class="p">:</span> <span class="p">[],</span> <span class="s1">&#39;l2&#39;</span><span class="p">:</span> <span class="p">[],</span> <span class="s1">&#39;max&#39;</span><span class="p">:</span> <span class="p">[]}</span>
+
+    <span class="k">for</span> <span class="n">noise_level</span> <span class="ow">in</span> <span class="n">noise_levels</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Training models with noise level: </span><span class="si">{</span><span class="n">noise_level</span><span class="o">*</span><span class="mi">100</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">%&quot;</span><span class="p">)</span>
+        <span class="c1"># Train standard neural network</span>
+        <span class="n">mse_nn</span><span class="p">,</span> <span class="n">l2_nn</span><span class="p">,</span> <span class="n">max_nn</span><span class="p">,</span> <span class="n">u_pred_nn</span><span class="p">,</span> <span class="n">t_nn</span><span class="p">,</span> <span class="n">u_exact_nn</span><span class="p">,</span> <span class="n">t_data_nn</span><span class="p">,</span> <span class="n">u_data_nn</span> <span class="o">=</span> <span class="n">train_standard_nn</span><span class="p">(</span>
+            <span class="n">ho</span><span class="p">,</span> <span class="n">noise_level</span><span class="o">=</span><span class="n">noise_level</span><span class="p">,</span> <span class="n">num_steps</span><span class="o">=</span><span class="mi">2000</span><span class="p">)</span>
+        <span class="n">errors_standard_nn</span><span class="p">[</span><span class="s1">&#39;mse&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mse_nn</span><span class="p">)</span>
+        <span class="n">errors_standard_nn</span><span class="p">[</span><span class="s1">&#39;l2&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">l2_nn</span><span class="p">)</span>
+        <span class="n">errors_standard_nn</span><span class="p">[</span><span class="s1">&#39;max&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">max_nn</span><span class="p">)</span>
+        
+        <span class="c1"># Train PINN</span>
+        <span class="n">mse_pinn</span><span class="p">,</span> <span class="n">l2_pinn</span><span class="p">,</span> <span class="n">max_pinn</span><span class="p">,</span> <span class="n">u_pred_pinn</span><span class="p">,</span> <span class="n">t_pinn</span><span class="p">,</span> <span class="n">u_exact_pinn</span><span class="p">,</span> <span class="n">t_data_pinn</span><span class="p">,</span> <span class="n">u_data_pinn</span> <span class="o">=</span> <span class="n">train_pinn</span><span class="p">(</span>
+            <span class="n">ho</span><span class="p">,</span> <span class="n">noise_level</span><span class="o">=</span><span class="n">noise_level</span><span class="p">,</span> <span class="n">num_steps</span><span class="o">=</span><span class="mi">20000</span><span class="p">)</span>
+        <span class="n">errors_pinn</span><span class="p">[</span><span class="s1">&#39;mse&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mse_pinn</span><span class="p">)</span>
+        <span class="n">errors_pinn</span><span class="p">[</span><span class="s1">&#39;l2&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">l2_pinn</span><span class="p">)</span>
+        <span class="n">errors_pinn</span><span class="p">[</span><span class="s1">&#39;max&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">max_pinn</span><span class="p">)</span>
+        
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Standard NN - MSE: </span><span class="si">{</span><span class="n">mse_nn</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">, L2: </span><span class="si">{</span><span class="n">l2_nn</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">, Max: </span><span class="si">{</span><span class="n">max_nn</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;PINN        - MSE: </span><span class="si">{</span><span class="n">mse_pinn</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">, L2: </span><span class="si">{</span><span class="n">l2_pinn</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">, Max: </span><span class="si">{</span><span class="n">max_pinn</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Plotting the final position vs time estimates</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">t_nn</span><span class="p">,</span> <span class="n">u_exact_nn</span><span class="p">,</span> <span class="s1">&#39;k--&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Exact Solution&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">t_nn</span><span class="p">,</span> <span class="n">u_pred_nn</span><span class="p">,</span> <span class="s1">&#39;b-&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Standard NN Prediction&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">t_pinn</span><span class="p">,</span> <span class="n">u_pred_pinn</span><span class="p">,</span> <span class="s1">&#39;r-&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;PINN Prediction&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">t_data_nn</span><span class="p">,</span> <span class="n">u_data_nn</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;blue&#39;</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;o&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Noisy Data (Standard NN)&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">t_data_pinn</span><span class="p">,</span> <span class="n">u_data_pinn</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Noisy Data (PINN)&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Displacement vs Time at Noise Level </span><span class="si">{</span><span class="n">noise_level</span><span class="o">*</span><span class="mi">100</span><span class="si">:</span><span class="s1">.0f</span><span class="si">}</span><span class="s1">%&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;Time (t)&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;Displacement u(t)&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+    <span class="c1"># Create subplots for different error metrics</span>
+    <span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+    <span class="n">metrics</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;MSE&#39;</span><span class="p">,</span> <span class="s1">&#39;L2&#39;</span><span class="p">,</span> <span class="s1">&#39;Max&#39;</span><span class="p">]</span>
+    <span class="n">error_keys</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;mse&#39;</span><span class="p">,</span> <span class="s1">&#39;l2&#39;</span><span class="p">,</span> <span class="s1">&#39;max&#39;</span><span class="p">]</span>
+    
+    <span class="k">for</span> <span class="n">ax</span><span class="p">,</span> <span class="n">metric</span><span class="p">,</span> <span class="n">key</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">axes</span><span class="p">,</span> <span class="n">metrics</span><span class="p">,</span> <span class="n">error_keys</span><span class="p">):</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">noise_levels</span> <span class="o">*</span> <span class="mi">100</span><span class="p">,</span> <span class="n">errors_standard_nn</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="s1">&#39;o-&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Standard NN&#39;</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">noise_levels</span> <span class="o">*</span> <span class="mi">100</span><span class="p">,</span> <span class="n">errors_pinn</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="s1">&#39;s-&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;PINN&#39;</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_yscale</span><span class="p">(</span><span class="s1">&#39;log&#39;</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;Noise Level (%)&#39;</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">metric</span><span class="si">}</span><span class="s1"> Error (log scale)&#39;</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">metric</span><span class="si">}</span><span class="s1"> Error vs Noise Level&#39;</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+    
+    <span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">stability_analysis</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Training models with noise level: 0%
+Standard NN - MSE: 0.235532, L2: 0.485317, Max: 0.878342
+PINN        - MSE: 0.000021, L2: 0.004572, Max: 0.008715
+</pre></div>
+</div>
+<img alt="../_images/2c5bb6eb79f80a2b7929776a76d54ec2ff166cffdddda81c4912489bad9dd8d1.png" src="../_images/2c5bb6eb79f80a2b7929776a76d54ec2ff166cffdddda81c4912489bad9dd8d1.png" />
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Training models with noise level: 1%
+Standard NN - MSE: 0.303261, L2: 0.550692, Max: 0.985226
+PINN        - MSE: 0.000056, L2: 0.007481, Max: 0.047476
+</pre></div>
+</div>
+<img alt="../_images/33f66d0850455f737f11446d64effcdc083416eb10e43c534b201a0959757a3e.png" src="../_images/33f66d0850455f737f11446d64effcdc083416eb10e43c534b201a0959757a3e.png" />
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Training models with noise level: 2%
+Standard NN - MSE: 0.378806, L2: 0.615472, Max: 1.100795
+PINN        - MSE: 0.000102, L2: 0.010094, Max: 0.016907
+</pre></div>
+</div>
+<img alt="../_images/b91459df891a69f344ff63d20eb60a057486710aebc387f63a513810337c7abb.png" src="../_images/b91459df891a69f344ff63d20eb60a057486710aebc387f63a513810337c7abb.png" />
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Training models with noise level: 3%
+Standard NN - MSE: 0.362813, L2: 0.602340, Max: 1.065039
+PINN        - MSE: 0.000335, L2: 0.018306, Max: 0.044401
+</pre></div>
+</div>
+<img alt="../_images/0f4b774713a1ea8df53e58242df50fd524b774c5984b342382b674042aca5bb9.png" src="../_images/0f4b774713a1ea8df53e58242df50fd524b774c5984b342382b674042aca5bb9.png" />
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Training models with noise level: 4%
+Standard NN - MSE: 0.289148, L2: 0.537725, Max: 0.960132
+PINN        - MSE: 0.001486, L2: 0.038548, Max: 0.081409
+</pre></div>
+</div>
+<img alt="../_images/88a97bdbf5e4d185242f32e36f00d1f37cde99cb2cb2b31f30c93f5bef16e773.png" src="../_images/88a97bdbf5e4d185242f32e36f00d1f37cde99cb2cb2b31f30c93f5bef16e773.png" />
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Training models with noise level: 5%
+Standard NN - MSE: 0.162859, L2: 0.403558, Max: 0.757030
+PINN        - MSE: 0.000552, L2: 0.023504, Max: 0.050388
+</pre></div>
+</div>
+<img alt="../_images/25ee9a7287d02c2415f7d77d4c5c7b4387d974087efbd8d33f6ac33c71ed82ac.png" src="../_images/25ee9a7287d02c2415f7d77d4c5c7b4387d974087efbd8d33f6ac33c71ed82ac.png" />
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Training models with noise level: 6%
+Standard NN - MSE: 0.225999, L2: 0.475393, Max: 0.890008
+PINN        - MSE: 0.001211, L2: 0.034802, Max: 0.166145
+</pre></div>
+</div>
+<img alt="../_images/f76397f43bd93cc3e6985790ed686a87a0cde0720e4854ddd07e7a1bd4c3c427.png" src="../_images/f76397f43bd93cc3e6985790ed686a87a0cde0720e4854ddd07e7a1bd4c3c427.png" />
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Training models with noise level: 7%
+Standard NN - MSE: 0.430483, L2: 0.656112, Max: 1.124572
+PINN        - MSE: 0.001606, L2: 0.040072, Max: 0.081739
+</pre></div>
+</div>
+<img alt="../_images/f9965724ce273b4515a5f00307086f141b6c33d6e3ea29344eb634f694daef65.png" src="../_images/f9965724ce273b4515a5f00307086f141b6c33d6e3ea29344eb634f694daef65.png" />
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Training models with noise level: 8%
+Standard NN - MSE: 0.061464, L2: 0.247919, Max: 0.648373
+PINN        - MSE: 0.001076, L2: 0.032808, Max: 0.075289
+</pre></div>
+</div>
+<img alt="../_images/088af2c09e63154eb4415b8ca1db47be12fd660034637e2999584e790c360508.png" src="../_images/088af2c09e63154eb4415b8ca1db47be12fd660034637e2999584e790c360508.png" />
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Training models with noise level: 9%
+Standard NN - MSE: 0.261475, L2: 0.511347, Max: 1.000848
+PINN        - MSE: 0.001894, L2: 0.043521, Max: 0.096451
+</pre></div>
+</div>
+<img alt="../_images/168d8c0e04f87e5b7f375f60cd9cc6091c3376a2ffa5d455743ffa04cbaf632e.png" src="../_images/168d8c0e04f87e5b7f375f60cd9cc6091c3376a2ffa5d455743ffa04cbaf632e.png" />
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Training models with noise level: 10%
+Standard NN - MSE: 0.076645, L2: 0.276848, Max: 0.755745
+PINN        - MSE: 0.003063, L2: 0.055346, Max: 0.108503
+</pre></div>
+</div>
+<img alt="../_images/c598ceebd74233dc28363d9796cc49d6c7a3a96fd2f197a96178cded231bb155.png" src="../_images/c598ceebd74233dc28363d9796cc49d6c7a3a96fd2f197a96178cded231bb155.png" />
+<img alt="../_images/783f88861798e907074a7bda283c20e736c1e1af6bf735fedd08238efefaeff8.png" src="../_images/783f88861798e907074a7bda283c20e736c1e1af6bf735fedd08238efefaeff8.png" />
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
+<span class="kn">import</span> <span class="nn">torch.optim</span> <span class="k">as</span> <span class="nn">optim</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">from</span> <span class="nn">tqdm</span> <span class="kn">import</span> <span class="n">tqdm</span>
+
+<span class="c1"># Set random seeds for reproducibility</span>
+<span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+<span class="n">torch</span><span class="o">.</span><span class="n">manual_seed</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">HarmonicOscillator</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">damping_coefficient</span><span class="p">,</span> <span class="n">natural_frequency</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">d</span> <span class="o">=</span> <span class="n">damping_coefficient</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">w0</span> <span class="o">=</span> <span class="n">natural_frequency</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">d</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">w0</span><span class="p">,</span> <span class="s2">&quot;Damping coefficient must be less than natural frequency for underdamped oscillator&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">w</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">w0</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">d</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">phi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arctan</span><span class="p">(</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">d</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">w</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">A</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">phi</span><span class="p">))</span>
+        
+    <span class="k">def</span> <span class="nf">analytical_solution</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Analytical solution to the 1D underdamped harmonic oscillator problem.&quot;&quot;&quot;</span>
+        <span class="n">cos_part</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">phi</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">w</span> <span class="o">*</span> <span class="n">t</span><span class="p">)</span>
+        <span class="n">exp_part</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">d</span> <span class="o">*</span> <span class="n">t</span><span class="p">)</span>
+        <span class="n">u</span> <span class="o">=</span> <span class="n">exp_part</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">A</span> <span class="o">*</span> <span class="n">cos_part</span>
+        <span class="k">return</span> <span class="n">u</span>
+    
+    <span class="k">def</span> <span class="nf">generate_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">noise_level</span><span class="o">=</span><span class="mf">0.0</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Generates training data for the oscillator with optional noise.&quot;&quot;&quot;</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">500</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">u</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">analytical_solution</span><span class="p">(</span><span class="n">t</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">t_data</span> <span class="o">=</span> <span class="n">t</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">200</span><span class="p">:</span><span class="mi">20</span><span class="p">]</span>
+        <span class="n">u_data</span> <span class="o">=</span> <span class="n">u</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">200</span><span class="p">:</span><span class="mi">20</span><span class="p">]</span>
+        <span class="c1"># Add noise to the data</span>
+        <span class="n">noise</span> <span class="o">=</span> <span class="n">noise_level</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="o">*</span><span class="n">u_data</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="n">u_data_noisy</span> <span class="o">=</span> <span class="n">u_data</span> <span class="o">+</span> <span class="n">noise</span>
+        <span class="k">return</span> <span class="n">t</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">t_data</span><span class="p">,</span> <span class="n">u_data_noisy</span>
+
+<span class="k">class</span> <span class="nc">NeuralNetwork</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">layer_sizes</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">NeuralNetwork</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="n">layers</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">in_size</span><span class="p">,</span> <span class="n">out_size</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">layer_sizes</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">layer_sizes</span><span class="p">[</span><span class="mi">1</span><span class="p">:]):</span>
+            <span class="n">layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">in_size</span><span class="p">,</span> <span class="n">out_size</span><span class="p">))</span>
+            <span class="n">layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Tanh</span><span class="p">())</span>
+        <span class="n">layers</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>  <span class="c1"># Remove the last activation function</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span><span class="o">*</span><span class="n">layers</span><span class="p">)</span>
+        
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">pinn_loss</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">t_data</span><span class="p">,</span> <span class="n">u_data</span><span class="p">,</span> <span class="n">t_physics</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Computes the loss for PINN, including data and physics losses.&quot;&quot;&quot;</span>
+    <span class="c1"># Data loss</span>
+    <span class="n">u_pred</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">t_data</span><span class="p">)</span>
+    <span class="n">loss_data</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">MSELoss</span><span class="p">()(</span><span class="n">u_pred</span><span class="p">,</span> <span class="n">u_data</span><span class="p">)</span>
+
+    <span class="c1"># Physics loss</span>
+    <span class="n">t_physics</span> <span class="o">=</span> <span class="n">t_physics</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">requires_grad_</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">u_physics</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">t_physics</span><span class="p">)</span>
+
+    <span class="n">du_dt</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">autograd</span><span class="o">.</span><span class="n">grad</span><span class="p">(</span><span class="n">u_physics</span><span class="p">,</span> <span class="n">t_physics</span><span class="p">,</span> <span class="n">grad_outputs</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">u_physics</span><span class="p">),</span>
+                                <span class="n">create_graph</span><span class="o">=</span><span class="kc">True</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">d2u_dt2</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">autograd</span><span class="o">.</span><span class="n">grad</span><span class="p">(</span><span class="n">du_dt</span><span class="p">,</span> <span class="n">t_physics</span><span class="p">,</span> <span class="n">grad_outputs</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">du_dt</span><span class="p">),</span>
+                                  <span class="n">create_graph</span><span class="o">=</span><span class="kc">True</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="n">physics</span> <span class="o">=</span> <span class="n">d2u_dt2</span> <span class="o">+</span> <span class="n">mu</span> <span class="o">*</span> <span class="n">du_dt</span> <span class="o">+</span> <span class="n">k</span> <span class="o">*</span> <span class="n">u_physics</span>
+    <span class="n">loss_physics</span> <span class="o">=</span> <span class="mf">1e-4</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">physics</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">loss_data</span> <span class="o">+</span> <span class="n">loss_physics</span>
+
+<span class="k">def</span> <span class="nf">train_standard_nn</span><span class="p">(</span><span class="n">ho</span><span class="p">,</span> <span class="n">num_steps</span><span class="o">=</span><span class="mi">10000</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Trains a standard neural network on clean data.&quot;&quot;&quot;</span>
+    <span class="n">t</span><span class="p">,</span> <span class="n">u_exact</span><span class="p">,</span> <span class="n">t_data</span><span class="p">,</span> <span class="n">u_data</span> <span class="o">=</span> <span class="n">ho</span><span class="o">.</span><span class="n">generate_data</span><span class="p">(</span><span class="n">noise_level</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span>
+
+    <span class="c1"># Initialize neural network model</span>
+    <span class="n">layer_sizes</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>  <span class="c1"># Updated to 64 neurons per layer</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">NeuralNetwork</span><span class="p">(</span><span class="n">layer_sizes</span><span class="p">)</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">train</span><span class="p">()</span>
+
+    <span class="c1"># Prepare data</span>
+    <span class="n">t_data_tensor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">t_data</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="n">u_data_tensor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">u_data</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="n">t_full_tensor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+
+    <span class="c1"># Define optimizer and loss function</span>
+    <span class="n">learning_rate</span> <span class="o">=</span> <span class="mf">1e-3</span>
+    <span class="n">optimizer</span> <span class="o">=</span> <span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span> <span class="n">lr</span><span class="o">=</span><span class="n">learning_rate</span><span class="p">)</span>
+    <span class="n">criterion</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">MSELoss</span><span class="p">()</span>
+
+    <span class="c1"># Training loop</span>
+    <span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">num_steps</span><span class="p">),</span> <span class="n">desc</span><span class="o">=</span><span class="s2">&quot;Training Standard NN&quot;</span><span class="p">):</span>
+        <span class="n">optimizer</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
+        <span class="n">u_pred</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">t_data_tensor</span><span class="p">)</span>
+        <span class="n">loss</span> <span class="o">=</span> <span class="n">criterion</span><span class="p">(</span><span class="n">u_pred</span><span class="p">,</span> <span class="n">u_data_tensor</span><span class="p">)</span>
+        <span class="n">loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
+        <span class="n">optimizer</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+
+    <span class="c1"># Evaluate model</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+    <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+        <span class="n">u_pred_full</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">t_full_tensor</span><span class="p">)</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+    <span class="c1"># Calculate error metrics</span>
+    <span class="n">error</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">((</span><span class="n">u_pred_full</span> <span class="o">-</span> <span class="n">u_exact</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">model</span><span class="p">,</span> <span class="n">error</span><span class="p">,</span> <span class="n">u_pred_full</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">u_exact</span>
+
+<span class="k">def</span> <span class="nf">train_pinn</span><span class="p">(</span><span class="n">ho</span><span class="p">,</span> <span class="n">num_steps</span><span class="o">=</span><span class="mi">20000</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Trains a physics-informed neural network on clean data.&quot;&quot;&quot;</span>
+    <span class="n">t</span><span class="p">,</span> <span class="n">u_exact</span><span class="p">,</span> <span class="n">t_data</span><span class="p">,</span> <span class="n">u_data</span> <span class="o">=</span> <span class="n">ho</span><span class="o">.</span><span class="n">generate_data</span><span class="p">(</span><span class="n">noise_level</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span>
+
+    <span class="c1"># Physics points for PINN</span>
+    <span class="n">t_physics</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>  <span class="c1"># Increased physics points for better training</span>
+    <span class="n">mu</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">ho</span><span class="o">.</span><span class="n">d</span>
+    <span class="n">k_param</span> <span class="o">=</span> <span class="n">ho</span><span class="o">.</span><span class="n">w0</span><span class="o">**</span><span class="mi">2</span>
+
+    <span class="c1"># Initialize neural network model</span>
+    <span class="n">layer_sizes</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>  <span class="c1"># Updated to 64 neurons per layer</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">NeuralNetwork</span><span class="p">(</span><span class="n">layer_sizes</span><span class="p">)</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">train</span><span class="p">()</span>
+
+    <span class="c1"># Prepare data</span>
+    <span class="n">t_data_tensor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">t_data</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="n">u_data_tensor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">u_data</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="n">t_physics_tensor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">t_physics</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="n">mu_tensor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">mu</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="n">k_param_tensor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">k_param</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+
+    <span class="c1"># Define optimizer</span>
+    <span class="n">learning_rate</span> <span class="o">=</span> <span class="mf">1e-4</span>
+    <span class="n">optimizer</span> <span class="o">=</span> <span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span> <span class="n">lr</span><span class="o">=</span><span class="n">learning_rate</span><span class="p">)</span>
+
+    <span class="c1"># Training loop</span>
+    <span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">num_steps</span><span class="p">),</span> <span class="n">desc</span><span class="o">=</span><span class="s2">&quot;Training PINN&quot;</span><span class="p">):</span>
+        <span class="n">optimizer</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
+        <span class="n">loss</span> <span class="o">=</span> <span class="n">pinn_loss</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">t_data_tensor</span><span class="p">,</span> <span class="n">u_data_tensor</span><span class="p">,</span> <span class="n">t_physics_tensor</span><span class="p">,</span> <span class="n">mu_tensor</span><span class="p">,</span> <span class="n">k_param_tensor</span><span class="p">)</span>
+        <span class="n">loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
+        <span class="n">optimizer</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+
+    <span class="c1"># Evaluate model</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+    <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+        <span class="n">u_pred_full</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">))</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+    <span class="c1"># Calculate error metrics</span>
+    <span class="n">error</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">((</span><span class="n">u_pred_full</span> <span class="o">-</span> <span class="n">u_exact</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">model</span><span class="p">,</span> <span class="n">error</span><span class="p">,</span> <span class="n">u_pred_full</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">u_exact</span>
+
+<span class="k">def</span> <span class="nf">compute_beta</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">u_exact</span><span class="p">,</span> <span class="n">noise_level</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="s1">&#39;cpu&#39;</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Computes the stability constant beta for a given model and noise level.</span>
+<span class="sd">    Args:</span>
+<span class="sd">        model: Trained neural network model.</span>
+<span class="sd">        t: Original time points (numpy array).</span>
+<span class="sd">        u_exact: Exact solution at time points t (numpy array).</span>
+<span class="sd">        noise_level: Standard deviation of Gaussian noise to add to t.</span>
+<span class="sd">        device: Device to perform computations on.</span>
+<span class="sd">    Returns:</span>
+<span class="sd">        beta: Stability constant.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Convert t to torch tensor</span>
+    <span class="n">t_tensor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+    <span class="n">t_tensor</span><span class="o">.</span><span class="n">requires_grad</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="c1"># Generate Gaussian noise</span>
+    <span class="n">epsilon</span> <span class="o">=</span> <span class="n">noise_level</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="o">*</span><span class="n">t</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="n">epsilon_tensor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">epsilon</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+
+    <span class="c1"># Perturbed inputs</span>
+    <span class="n">t_noisy_tensor</span> <span class="o">=</span> <span class="n">t_tensor</span> <span class="o">+</span> <span class="n">epsilon_tensor</span>
+
+    <span class="c1"># Compute model outputs</span>
+    <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+        <span class="n">f_t</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">t_tensor</span><span class="p">)</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+        <span class="n">f_t_noisy</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">t_noisy_tensor</span><span class="p">)</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+
+    <span class="c1"># Compute norms</span>
+    <span class="n">numerator</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">f_t_noisy</span> <span class="o">-</span> <span class="n">f_t</span><span class="p">)</span>
+    <span class="n">denominator</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">epsilon</span><span class="p">)</span>
+
+    <span class="c1"># Handle division by zero or very small denominator</span>
+    <span class="k">if</span> <span class="n">denominator</span> <span class="o">&lt;</span> <span class="mf">1e-8</span><span class="p">:</span>
+        <span class="n">beta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>  <span class="c1"># Undefined</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">beta</span> <span class="o">=</span> <span class="n">numerator</span> <span class="o">/</span> <span class="n">denominator</span>
+
+    <span class="k">return</span> <span class="n">beta</span>
+
+<span class="k">def</span> <span class="nf">stability_analysis</span><span class="p">():</span>
+    <span class="c1"># Initialize harmonic oscillator</span>
+    <span class="n">ho</span> <span class="o">=</span> <span class="n">HarmonicOscillator</span><span class="p">(</span><span class="n">damping_coefficient</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">natural_frequency</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+
+    <span class="c1"># Train models on clean data</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Training Standard NN...&quot;</span><span class="p">)</span>
+    <span class="n">model_nn</span><span class="p">,</span> <span class="n">error_nn</span><span class="p">,</span> <span class="n">u_pred_nn</span><span class="p">,</span> <span class="n">t_nn</span><span class="p">,</span> <span class="n">u_exact_nn</span> <span class="o">=</span> <span class="n">train_standard_nn</span><span class="p">(</span><span class="n">ho</span><span class="p">,</span> <span class="n">num_steps</span><span class="o">=</span><span class="mi">10000</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Standard NN Training Error: </span><span class="si">{</span><span class="n">error_nn</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Training PINN...&quot;</span><span class="p">)</span>
+    <span class="n">model_pinn</span><span class="p">,</span> <span class="n">error_pinn</span><span class="p">,</span> <span class="n">u_pred_pinn</span><span class="p">,</span> <span class="n">t_pinn</span><span class="p">,</span> <span class="n">u_exact_pinn</span> <span class="o">=</span> <span class="n">train_pinn</span><span class="p">(</span><span class="n">ho</span><span class="p">,</span> <span class="n">num_steps</span><span class="o">=</span><span class="mi">20000</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;PINN Training Error: </span><span class="si">{</span><span class="n">error_pinn</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Define noise levels (standard deviation of Gaussian noise)</span>
+    <span class="n">noise_levels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mi">20</span><span class="p">)</span>  <span class="c1"># Noise levels from 0% to 10%</span>
+
+    <span class="n">beta_standard_nn</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">beta_pinn</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">sigma</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">noise_levels</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s2">&quot;Computing Beta&quot;</span><span class="p">):</span>
+        <span class="n">beta_nn</span> <span class="o">=</span> <span class="n">compute_beta</span><span class="p">(</span><span class="n">model_nn</span><span class="p">,</span> <span class="n">t_nn</span><span class="p">,</span> <span class="n">u_exact_nn</span><span class="p">,</span> <span class="n">noise_level</span><span class="o">=</span><span class="n">sigma</span><span class="p">)</span>
+        <span class="n">beta_pinn_val</span> <span class="o">=</span> <span class="n">compute_beta</span><span class="p">(</span><span class="n">model_pinn</span><span class="p">,</span> <span class="n">t_pinn</span><span class="p">,</span> <span class="n">u_exact_pinn</span><span class="p">,</span> <span class="n">noise_level</span><span class="o">=</span><span class="n">sigma</span><span class="p">)</span>
+        <span class="n">beta_standard_nn</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">beta_nn</span><span class="p">)</span>
+        <span class="n">beta_pinn</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">beta_pinn_val</span><span class="p">)</span>
+
+    <span class="c1"># Convert noise levels to percentages for plotting</span>
+    <span class="n">noise_percentages</span> <span class="o">=</span> <span class="n">noise_levels</span> <span class="o">*</span> <span class="mi">100</span>
+
+    <span class="c1"># Convert beta lists to numpy arrays for easier handling</span>
+    <span class="n">beta_standard_nn</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">beta_standard_nn</span><span class="p">)</span>
+    <span class="n">beta_pinn</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">beta_pinn</span><span class="p">)</span>
+
+    <span class="c1"># Handle any NaN values by setting them to zero or another appropriate value</span>
+    <span class="c1"># Here, we&#39;ll exclude them from the plot</span>
+    <span class="n">valid_indices_nn</span> <span class="o">=</span> <span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">beta_standard_nn</span><span class="p">)</span>
+    <span class="n">valid_indices_pinn</span> <span class="o">=</span> <span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">beta_pinn</span><span class="p">)</span>
+
+    <span class="c1"># Plotting Beta vs Noise Level</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">noise_percentages</span><span class="p">[</span><span class="n">valid_indices_nn</span><span class="p">],</span> <span class="n">beta_standard_nn</span><span class="p">[</span><span class="n">valid_indices_nn</span><span class="p">],</span>
+             <span class="s1">&#39;o-&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Standard NN&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;blue&#39;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">noise_percentages</span><span class="p">[</span><span class="n">valid_indices_pinn</span><span class="p">],</span> <span class="n">beta_pinn</span><span class="p">[</span><span class="n">valid_indices_pinn</span><span class="p">],</span>
+             <span class="s1">&#39;s-&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;PINN&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;Noise Level (%)&#39;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;Stability Constant β&#39;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;Stability Analysis: β vs Noise Level&#39;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+    <span class="c1"># Plotting the predictions vs exact solution for a representative noise level</span>
+    <span class="n">representative_noise</span> <span class="o">=</span> <span class="mf">0.05</span>  <span class="c1"># 5%</span>
+    <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">noise_levels</span> <span class="o">-</span> <span class="n">representative_noise</span><span class="p">))</span>
+    <span class="n">sigma</span> <span class="o">=</span> <span class="n">noise_levels</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Representative Noise Level: </span><span class="si">{</span><span class="n">sigma</span><span class="o">*</span><span class="mi">100</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">%&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Generate noisy inputs</span>
+    <span class="n">epsilon</span> <span class="o">=</span> <span class="n">sigma</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="o">*</span><span class="n">t_nn</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="n">t_noisy</span> <span class="o">=</span> <span class="n">t_nn</span> <span class="o">+</span> <span class="n">epsilon</span>
+    <span class="n">t_noisy_tensor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">t_noisy</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+
+    <span class="c1"># Get model predictions</span>
+    <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+        <span class="n">u_pred_nn_noisy</span> <span class="o">=</span> <span class="n">model_nn</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">t_noisy</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">))</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+        <span class="n">u_pred_pinn_noisy</span> <span class="o">=</span> <span class="n">model_pinn</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">t_noisy</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">))</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+
+    <span class="c1"># Plotting</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">t_nn</span><span class="p">,</span> <span class="n">u_exact_nn</span><span class="p">,</span> <span class="s1">&#39;k--&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Exact Solution&#39;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">t_nn</span><span class="p">,</span> <span class="n">u_pred_nn</span><span class="p">,</span> <span class="s1">&#39;b-&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Standard NN Prediction&#39;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">t_nn</span><span class="p">,</span> <span class="n">u_pred_pinn</span><span class="p">,</span> <span class="s1">&#39;r-&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;PINN Prediction&#39;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">t_nn</span><span class="p">,</span> <span class="n">u_pred_nn_noisy</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;blue&#39;</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;o&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Standard NN Noisy Output&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">t_nn</span><span class="p">,</span> <span class="n">u_pred_pinn_noisy</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;PINN Noisy Output&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Displacement vs Time with </span><span class="si">{</span><span class="n">sigma</span><span class="o">*</span><span class="mi">100</span><span class="si">:</span><span class="s1">.1f</span><span class="si">}</span><span class="s1">% Noise in Inputs&#39;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;Time (t)&#39;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;Displacement u(t)&#39;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">stability_analysis</span><span class="p">()</span>
+
+<span class="k">def</span> <span class="nf">compute_local_beta</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">u_exact</span><span class="p">,</span> <span class="n">noise_level</span><span class="p">,</span> <span class="n">window_size</span><span class="o">=</span><span class="mf">0.1</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Computes stability constant β locally across different time windows.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        model: Trained neural network model</span>
+<span class="sd">        t: Time points array</span>
+<span class="sd">        u_exact: Exact solution</span>
+<span class="sd">        noise_level: Noise level for perturbation</span>
+<span class="sd">        window_size: Size of time window for local analysis</span>
+<span class="sd">        </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        local_betas: Array of local stability constants</span>
+<span class="sd">        window_centers: Centers of time windows</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">local_betas</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">window_centers</span> <span class="o">=</span> <span class="p">[]</span>
+    
+    <span class="c1"># Sliding window analysis</span>
+    <span class="k">for</span> <span class="n">t_center</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="o">-</span><span class="n">window_size</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span> <span class="n">window_size</span><span class="o">/</span><span class="mi">2</span><span class="p">):</span>
+        <span class="c1"># Define window bounds</span>
+        <span class="n">t_min</span> <span class="o">=</span> <span class="n">t_center</span>
+        <span class="n">t_max</span> <span class="o">=</span> <span class="n">t_center</span> <span class="o">+</span> <span class="n">window_size</span>
+        
+        <span class="c1"># Get indices for current window</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span> <span class="o">&gt;=</span> <span class="n">t_min</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span> <span class="o">&lt;=</span> <span class="n">t_max</span><span class="p">)</span>
+        <span class="n">t_window</span> <span class="o">=</span> <span class="n">t</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
+        
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">t_window</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>  <span class="c1"># Skip if window too small</span>
+            <span class="k">continue</span>
+            
+        <span class="c1"># Add noise to window</span>
+        <span class="n">t_window_tensor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">t_window</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">epsilon</span> <span class="o">=</span> <span class="n">noise_level</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="o">*</span><span class="n">t_window</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+        <span class="n">t_noisy_tensor</span> <span class="o">=</span> <span class="n">t_window_tensor</span> <span class="o">+</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">epsilon</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        
+        <span class="c1"># Compute predictions</span>
+        <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+            <span class="n">u_pred</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">t_window_tensor</span><span class="p">)</span>
+            <span class="n">u_pred_noisy</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">t_noisy_tensor</span><span class="p">)</span>
+            
+        <span class="c1"># Compute local beta</span>
+        <span class="n">numerator</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">u_pred_noisy</span> <span class="o">-</span> <span class="n">u_pred</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+        <span class="n">denominator</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">epsilon</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">denominator</span> <span class="o">&gt;</span> <span class="mf">1e-8</span><span class="p">:</span>
+            <span class="n">local_beta</span> <span class="o">=</span> <span class="n">numerator</span> <span class="o">/</span> <span class="n">denominator</span>
+            <span class="n">local_betas</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">local_beta</span><span class="p">)</span>
+            <span class="n">window_centers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">t_center</span> <span class="o">+</span> <span class="n">window_size</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span>
+    
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">local_betas</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">window_centers</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">analyze_stability_with_exact_solution</span><span class="p">():</span>
+    <span class="c1"># Initialize harmonic oscillator</span>
+    <span class="n">ho</span> <span class="o">=</span> <span class="n">HarmonicOscillator</span><span class="p">(</span><span class="n">damping_coefficient</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">natural_frequency</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+    
+    <span class="c1"># Train both models</span>
+    <span class="n">model_nn</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">u_exact</span> <span class="o">=</span> <span class="n">train_standard_nn</span><span class="p">(</span><span class="n">ho</span><span class="p">)</span>
+    <span class="n">model_pinn</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">train_pinn</span><span class="p">(</span><span class="n">ho</span><span class="p">)</span>
+    
+    <span class="c1"># Define noise levels</span>
+    <span class="n">noise_levels</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.05</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">]</span>  <span class="c1"># 1%, 5%, and 10% noise</span>
+    
+    <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">10</span><span class="p">))</span>
+    
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">noise_level</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">noise_levels</span><span class="p">):</span>
+        <span class="c1"># Compute local stability for both models</span>
+        <span class="n">beta_nn</span><span class="p">,</span> <span class="n">centers_nn</span> <span class="o">=</span> <span class="n">compute_local_beta</span><span class="p">(</span><span class="n">model_nn</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">u_exact</span><span class="p">,</span> <span class="n">noise_level</span><span class="p">)</span>
+        <span class="n">beta_pinn</span><span class="p">,</span> <span class="n">centers_pinn</span> <span class="o">=</span> <span class="n">compute_local_beta</span><span class="p">(</span><span class="n">model_pinn</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">u_exact</span><span class="p">,</span> <span class="n">noise_level</span><span class="p">)</span>
+        
+        <span class="c1"># Plot local stability</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">noise_levels</span><span class="p">),</span> <span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">centers_nn</span><span class="p">,</span> <span class="n">beta_nn</span><span class="p">,</span> <span class="s1">&#39;b-&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Standard NN&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">centers_pinn</span><span class="p">,</span> <span class="n">beta_pinn</span><span class="p">,</span> <span class="s1">&#39;r-&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;PINN&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Local Stability (β) at </span><span class="si">{</span><span class="n">noise_level</span><span class="o">*</span><span class="mi">100</span><span class="si">}</span><span class="s1">% Noise&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;Time&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;Local β&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+        
+        <span class="c1"># Plot relative error against exact solution</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">noise_levels</span><span class="p">),</span> <span class="n">i</span><span class="o">+</span><span class="nb">len</span><span class="p">(</span><span class="n">noise_levels</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+        
+        <span class="c1"># Add noise to full time domain</span>
+        <span class="n">t_tensor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+        <span class="n">epsilon</span> <span class="o">=</span> <span class="n">noise_level</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="o">*</span><span class="n">t</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+        <span class="n">t_noisy</span> <span class="o">=</span> <span class="n">t_tensor</span> <span class="o">+</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">epsilon</span><span class="p">)</span>
+        
+        <span class="c1"># Compute predictions</span>
+        <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+            <span class="n">u_nn</span> <span class="o">=</span> <span class="n">model_nn</span><span class="p">(</span><span class="n">t_noisy</span><span class="p">)</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+            <span class="n">u_pinn</span> <span class="o">=</span> <span class="n">model_pinn</span><span class="p">(</span><span class="n">t_noisy</span><span class="p">)</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+        
+        <span class="c1"># Plot relative errors</span>
+        <span class="n">rel_error_nn</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">u_nn</span> <span class="o">-</span> <span class="n">u_exact</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">u_exact</span><span class="p">)</span>
+        <span class="n">rel_error_pinn</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">u_pinn</span> <span class="o">-</span> <span class="n">u_exact</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">u_exact</span><span class="p">)</span>
+        
+        <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">rel_error_nn</span><span class="p">,</span> <span class="s1">&#39;b-&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Standard NN&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">rel_error_pinn</span><span class="p">,</span> <span class="s1">&#39;r-&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;PINN&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Relative Error at </span><span class="si">{</span><span class="n">noise_level</span><span class="o">*</span><span class="mi">100</span><span class="si">}</span><span class="s1">% Noise&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;Time&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;Relative Error&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">yscale</span><span class="p">(</span><span class="s1">&#39;log&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+    
+    <span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+    <span class="c1"># Print summary statistics</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Stability Analysis Summary:&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">noise_level</span> <span class="ow">in</span> <span class="n">noise_levels</span><span class="p">:</span>
+        <span class="n">beta_nn</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">compute_local_beta</span><span class="p">(</span><span class="n">model_nn</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">u_exact</span><span class="p">,</span> <span class="n">noise_level</span><span class="p">)</span>
+        <span class="n">beta_pinn</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">compute_local_beta</span><span class="p">(</span><span class="n">model_pinn</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">u_exact</span><span class="p">,</span> <span class="n">noise_level</span><span class="p">)</span>
+        
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Noise Level: </span><span class="si">{</span><span class="n">noise_level</span><span class="o">*</span><span class="mi">100</span><span class="si">}</span><span class="s2">%&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Standard NN - Mean β: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">beta_nn</span><span class="p">)</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">, Max β: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">beta_nn</span><span class="p">)</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;PINN - Mean β: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">beta_pinn</span><span class="p">)</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">, Max β: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">beta_pinn</span><span class="p">)</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">analyze_stability_with_exact_solution</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Training Standard NN...
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Training Standard NN: 100%|██████████| 10000/10000 [00:02&lt;00:00, 3634.93it/s]
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Standard NN Training Error: 0.375134
+Training PINN...
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Training PINN: 100%|██████████| 20000/20000 [00:16&lt;00:00, 1184.05it/s]
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>PINN Training Error: 0.000119
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Computing Beta: 100%|██████████| 20/20 [00:00&lt;00:00, 684.93it/s]
+</pre></div>
+</div>
+<img alt="../_images/1a802e2cf7cd371f46258b1680c2e4d225c90c4fe668a5ed6a19cbc27d43737e.png" src="../_images/1a802e2cf7cd371f46258b1680c2e4d225c90c4fe668a5ed6a19cbc27d43737e.png" />
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Representative Noise Level: 5.3%
+</pre></div>
+</div>
+<img alt="../_images/5b9a5a3c039843079facb6cfc9eec34b3b08e4b71ed57d098066ece2b03101ec.png" src="../_images/5b9a5a3c039843079facb6cfc9eec34b3b08e4b71ed57d098066ece2b03101ec.png" />
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Training Standard NN: 100%|██████████| 10000/10000 [00:02&lt;00:00, 3869.62it/s]
+Training PINN: 100%|██████████| 20000/20000 [00:16&lt;00:00, 1193.58it/s]
+</pre></div>
+</div>
+<img alt="../_images/3eedf111d22a155c7a28cd3f4e065f117aba5e58c18aa78b377e29eb77254f32.png" src="../_images/3eedf111d22a155c7a28cd3f4e065f117aba5e58c18aa78b377e29eb77254f32.png" />
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Stability Analysis Summary:
+
+Noise Level: 1.0%
+Standard NN - Mean β: 4.6948, Max β: 12.8486
+PINN - Mean β: 6.0357, Max β: 13.4400
+
+Noise Level: 5.0%
+Standard NN - Mean β: 4.2028, Max β: 12.2113
+PINN - Mean β: 5.1577, Max β: 10.9558
+
+Noise Level: 10.0%
+Standard NN - Mean β: 3.6617, Max β: 9.7699
+PINN - Mean β: 3.9039, Max β: 7.8200
+</pre></div>
+</div>
+</div>
+</div>
 </section>
 
     <script type="text/x-thebe-config">
