@@ -10,3 +10,8 @@ parts:
       - file: pinns/jax/00-oscillator.ipynb
       - file: pinns/01-static.ipynb
       - file: pinns/02-linear-elastic-fixed.ipynb
+      - file: pinns/03-collocation.ipynb
+      - file: pinns/04-adaptive-weights-pinns.ipynb
+      - file: pinns/05-burgers.ipynb
+      - file: pinns/07-heat-parameter-inverse.ipynb
+      - file: pinns/08-pinns-oscillator-analysis.ipynb
