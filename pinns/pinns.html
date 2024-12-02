@@ -65,7 +65,7 @@ const thebe_selector_output = ".output, .cell_output"
     <script>DOCUMENTATION_OPTIONS.pagename = 'pinns/pinns';</script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="PINNs: 00 - Oscillator (PyTorch)" href="00-oscillator.html" />
+    <link rel="next" title="PINNs: Oscillator (PyTorch)" href="oscillator.html" />
     <link rel="prev" title="Scientific Machine Learning: Foundations, Methods, and Applications" href="../README.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
@@ -164,19 +164,22 @@ const thebe_selector_output = ".output, .cell_output"
         </ul>
         <ul class="current nav bd-sidenav">
 <li class="toctree-l1 current active has-children"><a class="current reference internal" href="#">Physics Informed Neural Networks</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-1"><i class="fa-solid fa-chevron-down"></i></label><ul>
-<li class="toctree-l2"><a class="reference internal" href="00-oscillator.html">PINNs: 00 - Oscillator (PyTorch)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="oscillator.html">PINNs: Oscillator (PyTorch)</a></li>
 
 <li class="toctree-l2"><a class="reference internal" href="jax/00-oscillator.html">PINNs: 01 - Oscillator (JAX)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="01-static.html">PINNs: 01 - Static (PyTorch)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="02-linear-elastic-fixed.html">PINNs: 02 - Linear Elastic (PyTorch)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="03-collocation.html">Collocation approaches</a></li>
-<li class="toctree-l2"><a class="reference internal" href="05-burgers.html">06: Forward and inverse modeling of Burger’s Equation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="collocation.html">PINNs: Collocation approaches</a></li>
+<li class="toctree-l2"><a class="reference internal" href="adaptive-weights.html">PINNS: Adaptive weights</a></li>
+<li class="toctree-l2"><a class="reference internal" href="static.html">PINNs: Static (PyTorch)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="linear-elastic-fixed.html">PINNs: Linear Elastic (PyTorch)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="burgers.html">PINNs: Forward and inverse modeling of Burger’s Equation</a></li>
 
 
 
 
 
-<li class="toctree-l2"><a class="reference internal" href="08-pinns-oscillator-analysis.html">PINNs: Oscillator analysis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="discrete-time-burgers/discrete-time-burgers.html">PINNs: Discrete Time Burger’s equation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="oscillator-analysis.html">PINNs: Oscillator analysis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="inverse-heat-parameter.html">PINNs: Inverse estimation of parameters (1D heat)</a></li>
 </ul>
 </li>
 </ul>
@@ -375,8 +378,15 @@ document.write(`
             <nav aria-label="Page">
                 <ul class="visible nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#data-driven-vs-physics-informed-neural-networks-1d-damped-harmonic-oscillator">Data-driven vs Physics-informed Neural Networks (1D damped harmonic oscillator)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#collocation-strategies">Collocation strategies</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#adaptive-weight-strategies">Adaptive weight strategies</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#weak-boundary-enforcement-1d-beam">Weak-boundary enforcement (1D beam)</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#strong-boundary-enforcement-and-enery-minimization-2d-linear-elastic-beam">Strong-boundary enforcement and enery minimization (2D linear elastic beam)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#continuous-time-model-burger-s-equation">Continuous time model: Burger’s equation</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#discrete-time-model-burger-s-equation">Discrete time model: Burger’s equation</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#error-and-convergence-analysis-oscillator">Error and convergence analysis: Oscillator</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#inverse-parameter-estimation-1d-heat">Inverse parameter estimation: 1D heat</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#inverse-parameter-estimation-burgers">Inverse parameter estimation: Burgers</a></li>
 </ul>
             </nav>
         </div>
@@ -393,10 +403,30 @@ document.write(`
 <section id="data-driven-vs-physics-informed-neural-networks-1d-damped-harmonic-oscillator">
 <h2>Data-driven vs Physics-informed Neural Networks (1D damped harmonic oscillator)<a class="headerlink" href="#data-driven-vs-physics-informed-neural-networks-1d-damped-harmonic-oscillator" title="Permalink to this heading">#</a></h2>
 <ul class="simple">
-<li><p><a class="reference internal" href="00-oscillator.html"><span class="doc std std-doc">PINNs Oscillator</span></a></p>
+<li><p><a class="reference internal" href="oscillator.html"><span class="doc std std-doc">PINNs Oscillator</span></a></p>
 <ul>
-<li><p>Pytorch <a class="reference external" href="https://colab.research.google.com/github/sciml-book/sciml_notebook/blob/main/pinns/00-oscillator.ipynb"><img alt="Open in Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a></p></li>
+<li><p>Pytorch <a class="reference external" href="https://colab.research.google.com/github/sciml-book/sciml_notebook/blob/main/pinns/oscillator.ipynb"><img alt="Open in Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a></p></li>
 <li><p>JAX <a class="reference external" href="https://colab.research.google.com/github/sciml-book/sciml_notebook/blob/main/pinns/jax/00-oscillator.ipynb"><img alt="Open in Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a></p></li>
+</ul>
+</li>
+</ul>
+</section>
+<section id="collocation-strategies">
+<h2>Collocation strategies<a class="headerlink" href="#collocation-strategies" title="Permalink to this heading">#</a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="collocation.html"><span class="doc std std-doc">Collocation</span></a></p>
+<ul>
+<li><p>PyTorch <a class="reference external" href="https://colab.research.google.com/github/sciml-book/sciml_notebook/blob/main/pinns/collocation.ipynb"><img alt="Open in Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a></p></li>
+</ul>
+</li>
+</ul>
+</section>
+<section id="adaptive-weight-strategies">
+<h2>Adaptive weight strategies<a class="headerlink" href="#adaptive-weight-strategies" title="Permalink to this heading">#</a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="adaptive-weights.html"><span class="doc std std-doc">Weights</span></a></p>
+<ul>
+<li><p>PyTorch <a class="reference external" href="https://colab.research.google.com/github/sciml-book/sciml_notebook/blob/main/pinns/adaptive-wegihts.ipynb"><img alt="Open in Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a></p></li>
 </ul>
 </li>
 </ul>
@@ -404,9 +434,9 @@ document.write(`
 <section id="weak-boundary-enforcement-1d-beam">
 <h2>Weak-boundary enforcement (1D beam)<a class="headerlink" href="#weak-boundary-enforcement-1d-beam" title="Permalink to this heading">#</a></h2>
 <ul class="simple">
-<li><p><a class="reference internal" href="01-static.html"><span class="doc std std-doc">Static Beam</span></a></p>
+<li><p><a class="reference internal" href="static.html"><span class="doc std std-doc">Static Beam</span></a></p>
 <ul>
-<li><p>PyTorch <a class="reference external" href="https://colab.research.google.com/github/sciml-book/sciml_notebook/blob/main/pinns/01-static.ipynb"><img alt="Open in Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a></p></li>
+<li><p>PyTorch <a class="reference external" href="https://colab.research.google.com/github/sciml-book/sciml_notebook/blob/main/pinns/static.ipynb"><img alt="Open in Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a></p></li>
 </ul>
 </li>
 </ul>
@@ -414,9 +444,59 @@ document.write(`
 <section id="strong-boundary-enforcement-and-enery-minimization-2d-linear-elastic-beam">
 <h2>Strong-boundary enforcement and enery minimization (2D linear elastic beam)<a class="headerlink" href="#strong-boundary-enforcement-and-enery-minimization-2d-linear-elastic-beam" title="Permalink to this heading">#</a></h2>
 <ul class="simple">
-<li><p><a class="reference internal" href="02-linear-elastic-fixed.html"><span class="doc std std-doc">2D Linear Elastic Beam</span></a></p>
+<li><p><a class="reference internal" href="linear-elastic-fixed.html"><span class="doc std std-doc">2D Linear Elastic Beam</span></a></p>
 <ul>
-<li><p>PyTorch <a class="reference external" href="https://colab.research.google.com/github/sciml-book/sciml_notebook/blob/main/pinns/02-linear-elastic-fixed.ipynb"><img alt="Open in Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a></p></li>
+<li><p>PyTorch <a class="reference external" href="https://colab.research.google.com/github/sciml-book/sciml_notebook/blob/main/pinns/linear-elastic-fixed.ipynb"><img alt="Open in Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a></p></li>
+</ul>
+</li>
+</ul>
+</section>
+<section id="continuous-time-model-burger-s-equation">
+<h2>Continuous time model: Burger’s equation<a class="headerlink" href="#continuous-time-model-burger-s-equation" title="Permalink to this heading">#</a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="burgers.html"><span class="doc std std-doc">Continous time model</span></a></p>
+<ul>
+<li><p>PyTorch <a class="reference external" href="https://colab.research.google.com/github/sciml-book/sciml_notebook/blob/main/pinns/burgers.ipynb"><img alt="Open in Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a></p></li>
+</ul>
+</li>
+</ul>
+</section>
+<section id="discrete-time-model-burger-s-equation">
+<h2>Discrete time model: Burger’s equation<a class="headerlink" href="#discrete-time-model-burger-s-equation" title="Permalink to this heading">#</a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="burgers.html"><span class="doc std std-doc">Discrete time model</span></a></p>
+<ul>
+<li><p>PyTorch <a class="reference external" href="https://colab.research.google.com/github/sciml-book/sciml_notebook/blob/main/pinns/discrete-time-burgers/discrete-time-burgers.ipynb"><img alt="Open in Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a></p></li>
+</ul>
+</li>
+</ul>
+</section>
+<section id="error-and-convergence-analysis-oscillator">
+<h2>Error and convergence analysis: Oscillator<a class="headerlink" href="#error-and-convergence-analysis-oscillator" title="Permalink to this heading">#</a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="oscillator-analysis.html"><span class="doc std std-doc">PINNs analysis</span></a></p>
+<ul>
+<li><p>PyTorch <a class="reference external" href="https://colab.research.google.com/github/sciml-book/sciml_notebook/blob/main/pinns/oscillator-analysis.ipynb"><img alt="Open in Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a></p></li>
+</ul>
+</li>
+</ul>
+</section>
+<section id="inverse-parameter-estimation-1d-heat">
+<h2>Inverse parameter estimation: 1D heat<a class="headerlink" href="#inverse-parameter-estimation-1d-heat" title="Permalink to this heading">#</a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="inverse-heat-parameter.html"><span class="doc std std-doc">Inverse heat</span></a></p>
+<ul>
+<li><p>PyTorch <a class="reference external" href="https://colab.research.google.com/github/sciml-book/sciml_notebook/blob/main/pinns/inverse-heat-parameter.ipynb"><img alt="Open in Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a></p></li>
+</ul>
+</li>
+</ul>
+</section>
+<section id="inverse-parameter-estimation-burgers">
+<h2>Inverse parameter estimation: Burgers<a class="headerlink" href="#inverse-parameter-estimation-burgers" title="Permalink to this heading">#</a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="burgers.html"><span class="doc std std-doc">Inverse Burgers</span></a></p>
+<ul>
+<li><p>PyTorch <a class="reference external" href="https://colab.research.google.com/github/sciml-book/sciml_notebook/blob/main/pinns/discrete-time-burgers/discrete-time-burgers.ipynb"><img alt="Open in Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a></p></li>
 </ul>
 </li>
 </ul>
@@ -465,11 +545,11 @@ document.write(`
       </div>
     </a>
     <a class="right-next"
-       href="00-oscillator.html"
+       href="oscillator.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">PINNs: 00 - Oscillator (PyTorch)</p>
+        <p class="prev-next-title">PINNs: Oscillator (PyTorch)</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>
@@ -489,8 +569,15 @@ document.write(`
   <nav class="bd-toc-nav page-toc">
     <ul class="visible nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#data-driven-vs-physics-informed-neural-networks-1d-damped-harmonic-oscillator">Data-driven vs Physics-informed Neural Networks (1D damped harmonic oscillator)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#collocation-strategies">Collocation strategies</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#adaptive-weight-strategies">Adaptive weight strategies</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#weak-boundary-enforcement-1d-beam">Weak-boundary enforcement (1D beam)</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#strong-boundary-enforcement-and-enery-minimization-2d-linear-elastic-beam">Strong-boundary enforcement and enery minimization (2D linear elastic beam)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#continuous-time-model-burger-s-equation">Continuous time model: Burger’s equation</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#discrete-time-model-burger-s-equation">Discrete time model: Burger’s equation</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#error-and-convergence-analysis-oscillator">Error and convergence analysis: Oscillator</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#inverse-parameter-estimation-1d-heat">Inverse parameter estimation: 1D heat</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#inverse-parameter-estimation-burgers">Inverse parameter estimation: Burgers</a></li>
 </ul>
   </nav></div>
 
