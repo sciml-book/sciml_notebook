@@ -1,6 +1,6 @@
 # Physics Informed Neural Networks
 
-### Data-driven vs Physics-informed Neural Networks (1D damped harmonic oscillator)
+### Data-driven vs PINNs (1D damped harmonic oscillator)
 - [PINNs Oscillator](oscillator.ipynb)
     - Pytorch [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/sciml-book/sciml_notebook/blob/main/pinns/oscillator.ipynb)
     - JAX [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/sciml-book/sciml_notebook/blob/main/pinns/jax/00-oscillator.ipynb)
