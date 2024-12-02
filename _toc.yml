@@ -6,12 +6,14 @@ parts:
   - chapters:
     - file: pinns/pinns.md
       sections:
-      - file: pinns/00-oscillator.ipynb
+      - file: pinns/oscillator.ipynb
       - file: pinns/jax/00-oscillator.ipynb
-      - file: pinns/01-static.ipynb
-      - file: pinns/02-linear-elastic-fixed.ipynb
-      - file: pinns/03-collocation.ipynb
-      - file: pinns/04-adaptive-weights-pinns.ipynb
-      - file: pinns/05-burgers.ipynb
-      - file: pinns/07-heat-parameter-inverse.ipynb
-      - file: pinns/08-pinns-oscillator-analysis.ipynb
+      - file: pinns/collocation.ipynb
+      - file: pinns/adaptive-weights.ipynb
+      - file: pinns/static.ipynb
+      - file: pinns/linear-elastic-fixed.ipynb
+      - file: pinns/burgers.ipynb
+      - file: pinns/discrete-time-burgers/discrete-time-burgers.ipynb
+      - file: pinns/oscillator-analysis.ipynb
+      - file: pinns/inverse-heat-parameter.ipynb
+      
