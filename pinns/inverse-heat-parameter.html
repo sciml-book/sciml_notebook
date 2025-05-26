@@ -414,14 +414,14 @@ document.write(`
 <p><a class="reference external" href="https://colab.research.google.com/github/sciml-book/sciml_notebook/blob/main/pinns/inverse-heat-parameter.ipynb"><img alt="Open in Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a></p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
-<span class="kn">from</span> <span class="nn">tqdm</span> <span class="kn">import</span> <span class="n">tqdm</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nn</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">tqdm</span><span class="w"> </span><span class="kn">import</span> <span class="n">tqdm</span>
 
-<span class="k">class</span> <span class="nc">PINN</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_hidden_layers</span><span class="p">,</span> <span class="n">num_neurons_per_layer</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">PINN</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_hidden_layers</span><span class="p">,</span> <span class="n">num_neurons_per_layer</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">PINN</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         
         <span class="n">layers</span> <span class="o">=</span> <span class="p">[]</span>
@@ -439,11 +439,11 @@ document.write(`
         
         <span class="bp">self</span><span class="o">.</span><span class="n">network</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span><span class="o">*</span><span class="n">layers</span><span class="p">)</span>
         
-    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">network</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
 
-<span class="k">class</span> <span class="nc">HeatTransfer</span><span class="p">:</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_points</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">hidden_layers</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">neurons_per_layer</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="n">learning_rate</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">HeatTransfer</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_points</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">hidden_layers</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">neurons_per_layer</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="n">learning_rate</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">):</span>
         <span class="c1"># Set seeds for reproducibility</span>
         <span class="n">torch</span><span class="o">.</span><span class="n">manual_seed</span><span class="p">(</span><span class="mi">123</span><span class="p">)</span>
         <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">123</span><span class="p">)</span>
@@ -476,16 +476,16 @@ document.write(`
         <span class="bp">self</span><span class="o">.</span><span class="n">loss_history</span> <span class="o">=</span> <span class="p">[]</span>
     
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">exact_solution</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">exact_solution</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Exact solution of the heat equation&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="o">-</span><span class="mi">5</span> <span class="o">*</span> <span class="n">x</span><span class="o">**</span><span class="mi">3</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">x</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="mi">3</span> <span class="o">*</span> <span class="n">x</span>
     
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">source_function</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">source_function</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Source term in the heat equation&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="mi">15</span> <span class="o">*</span> <span class="n">x</span> <span class="o">-</span> <span class="mi">2</span>
     
-    <span class="k">def</span> <span class="nf">get_derivatives</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">T</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_derivatives</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">T</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate first and second derivatives using autograd&quot;&quot;&quot;</span>
         <span class="n">T_x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">autograd</span><span class="o">.</span><span class="n">grad</span><span class="p">(</span>
             <span class="n">T</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span>
@@ -503,24 +503,24 @@ document.write(`
         
         <span class="k">return</span> <span class="n">T_x</span><span class="p">,</span> <span class="n">T_xx</span>
     
-    <span class="k">def</span> <span class="nf">compute_boundary_loss</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">compute_boundary_loss</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute loss at boundary points&quot;&quot;&quot;</span>
         <span class="n">predicted_bcs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bcs_x</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">mean</span><span class="p">((</span><span class="n">predicted_bcs</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">bcs_T</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
     
-    <span class="k">def</span> <span class="nf">compute_physics_loss</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">compute_physics_loss</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute physics-informed loss&quot;&quot;&quot;</span>
         <span class="n">T</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x_interior</span><span class="p">)</span>
         <span class="n">_</span><span class="p">,</span> <span class="n">T_xx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_derivatives</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x_interior</span><span class="p">,</span> <span class="n">T</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">mean</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">kappa</span> <span class="o">*</span> <span class="n">T_xx</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">source_function</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x_interior</span><span class="p">))</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
     
-    <span class="k">def</span> <span class="nf">compute_data_loss</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">compute_data_loss</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute loss against observed data&quot;&quot;&quot;</span>
         <span class="n">observed_T</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">exact_solution</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x_interior</span><span class="p">)</span>
         <span class="n">predicted_T</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x_interior</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">mean</span><span class="p">((</span><span class="n">observed_T</span> <span class="o">-</span> <span class="n">predicted_T</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
     
-    <span class="k">def</span> <span class="nf">train</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">epochs</span><span class="o">=</span><span class="mi">6000</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">train</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">epochs</span><span class="o">=</span><span class="mi">6000</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Train the model&quot;&quot;&quot;</span>
         <span class="n">pbar</span> <span class="o">=</span> <span class="n">tqdm</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">epochs</span><span class="p">),</span> <span class="n">desc</span><span class="o">=</span><span class="s1">&#39;Training&#39;</span><span class="p">,</span> <span class="n">ncols</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
         
@@ -550,7 +550,7 @@ document.write(`
                 <span class="s1">&#39;kappa&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">kappa</span><span class="o">.</span><span class="n">item</span><span class="p">()</span><span class="si">:</span><span class="s1">.6f</span><span class="si">}</span><span class="s1">&#39;</span>
             <span class="p">})</span>
     
-    <span class="k">def</span> <span class="nf">plot_results</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">plot_results</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Plot the results with clean white background styling&quot;&quot;&quot;</span>
         <span class="c1"># Set the style to default white background</span>
         <span class="n">plt</span><span class="o">.</span><span class="n">style</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="s1">&#39;default&#39;</span><span class="p">)</span>
@@ -647,7 +647,7 @@ document.write(`
         <span class="c1">#             dpi=300, bbox_inches=&#39;tight&#39;,</span>
         <span class="c1">#             facecolor=&#39;white&#39;, edgecolor=&#39;none&#39;)</span>
         <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
-<span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
     <span class="c1"># Create and train the model</span>
     <span class="n">heat_transfer</span> <span class="o">=</span> <span class="n">HeatTransfer</span><span class="p">()</span>
     <span class="n">heat_transfer</span><span class="o">.</span><span class="n">train</span><span class="p">()</span>

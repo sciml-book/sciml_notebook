@@ -415,23 +415,23 @@ document.write(`
 <p><a class="reference external" href="https://colab.research.google.com/github/sciml-book/sciml_notebook/blob/main/pinns/oscillator-analysis.ipynb"><img alt="Open in Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a></p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
-<span class="kn">import</span> <span class="nn">torch.optim</span> <span class="k">as</span> <span class="nn">optim</span>
-<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
-<span class="kn">import</span> <span class="nn">base64</span>
-<span class="kn">from</span> <span class="nn">IPython.display</span> <span class="kn">import</span> <span class="n">HTML</span><span class="p">,</span> <span class="n">display</span>
-<span class="kn">import</span> <span class="nn">imageio</span>
-<span class="kn">from</span> <span class="nn">tqdm</span> <span class="kn">import</span> <span class="n">tqdm</span>
-<span class="kn">from</span> <span class="nn">sklearn.decomposition</span> <span class="kn">import</span> <span class="n">PCA</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nn</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch.optim</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">optim</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">base64</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">IPython.display</span><span class="w"> </span><span class="kn">import</span> <span class="n">HTML</span><span class="p">,</span> <span class="n">display</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">imageio</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">tqdm</span><span class="w"> </span><span class="kn">import</span> <span class="n">tqdm</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.decomposition</span><span class="w"> </span><span class="kn">import</span> <span class="n">PCA</span>
 
 <span class="c1"># Ensure reproducibility</span>
 <span class="n">torch</span><span class="o">.</span><span class="n">manual_seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
 <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
 
-<span class="k">class</span> <span class="nc">HarmonicOscillator</span><span class="p">:</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">damping_coefficient</span><span class="p">,</span> <span class="n">natural_frequency</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">HarmonicOscillator</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">damping_coefficient</span><span class="p">,</span> <span class="n">natural_frequency</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">d</span> <span class="o">=</span> <span class="n">damping_coefficient</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">w0</span> <span class="o">=</span> <span class="n">natural_frequency</span>
         <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">d</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">w0</span><span class="p">,</span> <span class="s2">&quot;Damping coefficient must be less than natural frequency for underdamped oscillator&quot;</span>
@@ -439,19 +439,19 @@ document.write(`
         <span class="bp">self</span><span class="o">.</span><span class="n">phi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arctan</span><span class="p">(</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">d</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">w</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">A</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">phi</span><span class="p">))</span>
         
-    <span class="k">def</span> <span class="nf">analytical_solution</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">analytical_solution</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Analytical solution to the 1D underdamped harmonic oscillator problem.&quot;&quot;&quot;</span>
         <span class="n">cos_part</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">phi</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">w</span> <span class="o">*</span> <span class="n">t</span><span class="p">)</span>
         <span class="n">exp_part</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">d</span> <span class="o">*</span> <span class="n">t</span><span class="p">)</span>
         <span class="n">u</span> <span class="o">=</span> <span class="n">exp_part</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">A</span> <span class="o">*</span> <span class="n">cos_part</span>
         <span class="k">return</span> <span class="n">u</span>
     
-    <span class="k">def</span> <span class="nf">analytical_derivative</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">analytical_derivative</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Analytical derivative of the solution.&quot;&quot;&quot;</span>
         <span class="n">du_dt</span> <span class="o">=</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">d</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">analytical_solution</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">A</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">w</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">phi</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">w</span> <span class="o">*</span> <span class="n">t</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">d</span> <span class="o">*</span> <span class="n">t</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">du_dt</span>
     
-    <span class="k">def</span> <span class="nf">generate_data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">generate_data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Generates training data for the oscillator.&quot;&quot;&quot;</span>
         <span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">500</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
         <span class="n">u</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">analytical_solution</span><span class="p">(</span><span class="n">t</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
@@ -459,12 +459,12 @@ document.write(`
         <span class="n">u_data</span> <span class="o">=</span> <span class="n">u</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">200</span><span class="p">:</span><span class="mi">20</span><span class="p">]</span>
         <span class="k">return</span> <span class="n">t</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">t_data</span><span class="p">,</span> <span class="n">u_data</span>
 
-<span class="k">class</span> <span class="nc">Visualizer</span><span class="p">:</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Visualizer</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="c1"># Remove seaborn style to have more control over the plot appearance</span>
         <span class="n">plt</span><span class="o">.</span><span class="n">style</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="s1">&#39;default&#39;</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">plot_result</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">u_exact</span><span class="p">,</span> <span class="n">t_data</span><span class="p">,</span> <span class="n">u_data</span><span class="p">,</span> <span class="n">u_pred</span><span class="p">,</span> <span class="n">t_physics</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">iteration</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">plot_result</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">u_exact</span><span class="p">,</span> <span class="n">t_data</span><span class="p">,</span> <span class="n">u_data</span><span class="p">,</span> <span class="n">u_pred</span><span class="p">,</span> <span class="n">t_physics</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">iteration</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Plots the results with improved visualization.</span>
 
@@ -524,19 +524,19 @@ document.write(`
         <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="n">fig</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">image</span>
 
-    <span class="k">def</span> <span class="nf">create_animation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">frames</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="s1">&#39;animation.gif&#39;</span><span class="p">,</span> <span class="n">fps</span><span class="o">=</span><span class="mi">5</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">create_animation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">frames</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="s1">&#39;animation.gif&#39;</span><span class="p">,</span> <span class="n">fps</span><span class="o">=</span><span class="mi">5</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Creates and saves an animation from frames.&quot;&quot;&quot;</span>
         <span class="n">imageio</span><span class="o">.</span><span class="n">mimsave</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">frames</span><span class="p">,</span> <span class="n">fps</span><span class="o">=</span><span class="n">fps</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">display_animation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="s1">&#39;animation.gif&#39;</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">display_animation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="s1">&#39;animation.gif&#39;</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Displays the animation as HTML.&quot;&quot;&quot;</span>
         <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
             <span class="n">data</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
         <span class="n">data_url</span> <span class="o">=</span> <span class="s2">&quot;data:image/gif;base64,&quot;</span> <span class="o">+</span> <span class="n">base64</span><span class="o">.</span><span class="n">b64encode</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span>
         <span class="n">display</span><span class="p">(</span><span class="n">HTML</span><span class="p">(</span><span class="s1">&#39;&lt;img src=&quot;</span><span class="si">{}</span><span class="s1">&quot;&gt;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">data_url</span><span class="p">)))</span>
 
-<span class="k">class</span> <span class="nc">NeuralNetwork</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">layer_sizes</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">NeuralNetwork</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">layer_sizes</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">NeuralNetwork</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="n">layers</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">in_size</span><span class="p">,</span> <span class="n">out_size</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">layer_sizes</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">layer_sizes</span><span class="p">[</span><span class="mi">1</span><span class="p">:]):</span>
@@ -545,10 +545,10 @@ document.write(`
         <span class="n">layers</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>  <span class="c1"># Remove the last activation function</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span><span class="o">*</span><span class="n">layers</span><span class="p">)</span>
         
-    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
 
-<span class="k">def</span> <span class="nf">pinn_loss</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">t_data</span><span class="p">,</span> <span class="n">u_data</span><span class="p">,</span> <span class="n">t_physics</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">pinn_loss</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">t_data</span><span class="p">,</span> <span class="n">u_data</span><span class="p">,</span> <span class="n">t_physics</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Computes the loss for PINN, including data and physics losses.&quot;&quot;&quot;</span>
     <span class="c1"># Data loss</span>
     <span class="n">u_pred</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">t_data</span><span class="p">)</span>
@@ -568,7 +568,7 @@ document.write(`
 
     <span class="k">return</span> <span class="n">loss_data</span> <span class="o">+</span> <span class="n">loss_physics</span>
 
-<span class="k">def</span> <span class="nf">train_standard_nn</span><span class="p">(</span><span class="n">ho</span><span class="p">,</span> <span class="n">visualizer</span><span class="p">,</span> <span class="n">layer_sizes</span><span class="p">,</span> <span class="n">num_steps</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">record_interval</span><span class="o">=</span><span class="mi">100</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">train_standard_nn</span><span class="p">(</span><span class="n">ho</span><span class="p">,</span> <span class="n">visualizer</span><span class="p">,</span> <span class="n">layer_sizes</span><span class="p">,</span> <span class="n">num_steps</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">record_interval</span><span class="o">=</span><span class="mi">100</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Trains a standard neural network and collects parameter trajectories.&quot;&quot;&quot;</span>
     <span class="n">t</span><span class="p">,</span> <span class="n">u_exact</span><span class="p">,</span> <span class="n">t_data</span><span class="p">,</span> <span class="n">u_data</span> <span class="o">=</span> <span class="n">ho</span><span class="o">.</span><span class="n">generate_data</span><span class="p">()</span>
 
@@ -622,7 +622,7 @@ document.write(`
 
     <span class="k">return</span> <span class="n">model</span><span class="p">,</span> <span class="n">losses</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">param_trajectory</span><span class="p">)</span>
 
-<span class="k">def</span> <span class="nf">train_pinn</span><span class="p">(</span><span class="n">ho</span><span class="p">,</span> <span class="n">visualizer</span><span class="p">,</span> <span class="n">layer_sizes</span><span class="p">,</span> <span class="n">num_steps</span><span class="o">=</span><span class="mi">20000</span><span class="p">,</span> <span class="n">record_interval</span><span class="o">=</span><span class="mi">1500</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">train_pinn</span><span class="p">(</span><span class="n">ho</span><span class="p">,</span> <span class="n">visualizer</span><span class="p">,</span> <span class="n">layer_sizes</span><span class="p">,</span> <span class="n">num_steps</span><span class="o">=</span><span class="mi">20000</span><span class="p">,</span> <span class="n">record_interval</span><span class="o">=</span><span class="mi">1500</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Trains a physics-informed neural network and collects parameter trajectories.&quot;&quot;&quot;</span>
     <span class="n">t</span><span class="p">,</span> <span class="n">u_exact</span><span class="p">,</span> <span class="n">t_data</span><span class="p">,</span> <span class="n">u_data</span> <span class="o">=</span> <span class="n">ho</span><span class="o">.</span><span class="n">generate_data</span><span class="p">()</span>
 
@@ -684,7 +684,7 @@ document.write(`
 
     <span class="k">return</span> <span class="n">model</span><span class="p">,</span> <span class="n">losses</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">param_trajectory</span><span class="p">)</span>
 
-<span class="k">def</span> <span class="nf">evaluate_lipschitz_constant</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">t_samples</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">evaluate_lipschitz_constant</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">t_samples</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Evaluates the Lipschitz constant of the model over the sampled t values.</span>
 
@@ -711,7 +711,7 @@ document.write(`
 
     <span class="k">return</span> <span class="n">lipschitz_constant</span><span class="p">,</span> <span class="n">du_dt_np</span>
 
-<span class="k">def</span> <span class="nf">estimate_rademacher_complexity</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">t_samples</span><span class="p">,</span> <span class="n">num_trials</span><span class="o">=</span><span class="mi">100</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">estimate_rademacher_complexity</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">t_samples</span><span class="p">,</span> <span class="n">num_trials</span><span class="o">=</span><span class="mi">100</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Estimates the Rademacher complexity of a trained model.</span>
 
@@ -740,7 +740,7 @@ document.write(`
     <span class="n">rademacher_complexity</span> <span class="o">=</span> <span class="n">rademacher_sum</span> <span class="o">/</span> <span class="n">num_trials</span>
     <span class="k">return</span> <span class="n">rademacher_complexity</span>
 
-<span class="k">def</span> <span class="nf">perform_pca</span><span class="p">(</span><span class="n">param_trajectory</span><span class="p">,</span> <span class="n">n_components</span><span class="o">=</span><span class="mi">2</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">perform_pca</span><span class="p">(</span><span class="n">param_trajectory</span><span class="p">,</span> <span class="n">n_components</span><span class="o">=</span><span class="mi">2</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Performs PCA on the parameter trajectory to find principal directions.</span>
 
@@ -757,7 +757,7 @@ document.write(`
     <span class="n">components</span> <span class="o">=</span> <span class="n">pca</span><span class="o">.</span><span class="n">components_</span>
     <span class="k">return</span> <span class="n">components</span><span class="p">,</span> <span class="n">pca</span>
 
-<span class="k">def</span> <span class="nf">evaluate_loss_landscape_pca</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">model_type</span><span class="p">,</span> <span class="n">loss_function</span><span class="p">,</span> <span class="n">pca_components</span><span class="p">,</span> <span class="n">param_step</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">param_range</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">evaluate_loss_landscape_pca</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">model_type</span><span class="p">,</span> <span class="n">loss_function</span><span class="p">,</span> <span class="n">pca_components</span><span class="p">,</span> <span class="n">param_step</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">param_range</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Evaluates the loss landscape around the current model parameters using PCA components.</span>
 
@@ -819,7 +819,7 @@ document.write(`
 
     <span class="k">return</span> <span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">Z</span>
 
-<span class="k">def</span> <span class="nf">standard_loss</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">ho</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">standard_loss</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">ho</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Loss function for standard NN: MSE on data.&quot;&quot;&quot;</span>
     <span class="n">t</span><span class="p">,</span> <span class="n">u_exact</span><span class="p">,</span> <span class="n">t_data</span><span class="p">,</span> <span class="n">u_data</span> <span class="o">=</span> <span class="n">ho</span><span class="o">.</span><span class="n">generate_data</span><span class="p">()</span>
     <span class="n">t_data_tensor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">t_data</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
@@ -827,7 +827,7 @@ document.write(`
     <span class="n">u_pred</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">t_data_tensor</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">nn</span><span class="o">.</span><span class="n">MSELoss</span><span class="p">()(</span><span class="n">u_pred</span><span class="p">,</span> <span class="n">u_data_tensor</span><span class="p">)</span>
 
-<span class="k">def</span> <span class="nf">pinn_total_loss</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">ho</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">pinn_total_loss</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">ho</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Total loss function for PINN: data + physics.&quot;&quot;&quot;</span>
     <span class="n">t</span><span class="p">,</span> <span class="n">u_exact</span><span class="p">,</span> <span class="n">t_data</span><span class="p">,</span> <span class="n">u_data</span> <span class="o">=</span> <span class="n">ho</span><span class="o">.</span><span class="n">generate_data</span><span class="p">()</span>
     <span class="n">t_physics</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">30</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
@@ -843,7 +843,7 @@ document.write(`
 
     <span class="k">return</span> <span class="n">pinn_loss</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">t_data_tensor</span><span class="p">,</span> <span class="n">u_data_tensor</span><span class="p">,</span> <span class="n">t_physics_tensor</span><span class="p">,</span> <span class="n">mu_tensor</span><span class="p">,</span> <span class="n">k_param_tensor</span><span class="p">)</span>
 
-<span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
     <span class="c1"># Initialize harmonic oscillator with underdamped parameters</span>
     <span class="n">ho</span> <span class="o">=</span> <span class="n">HarmonicOscillator</span><span class="p">(</span><span class="n">damping_coefficient</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">natural_frequency</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
 
@@ -894,10 +894,10 @@ document.write(`
         <span class="n">pinn_components</span><span class="p">,</span> <span class="n">pinn_pca</span> <span class="o">=</span> <span class="n">perform_pca</span><span class="p">(</span><span class="n">pinn_params</span><span class="p">)</span>
 
         <span class="c1"># Define loss functions with access to harmonic oscillator</span>
-        <span class="k">def</span> <span class="nf">standard_loss_fn</span><span class="p">(</span><span class="n">model</span><span class="p">):</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">standard_loss_fn</span><span class="p">(</span><span class="n">model</span><span class="p">):</span>
             <span class="k">return</span> <span class="n">standard_loss</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">ho</span><span class="p">)</span>
 
-        <span class="k">def</span> <span class="nf">pinn_loss_fn</span><span class="p">(</span><span class="n">model</span><span class="p">):</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">pinn_loss_fn</span><span class="p">(</span><span class="n">model</span><span class="p">):</span>
             <span class="k">return</span> <span class="n">pinn_total_loss</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">ho</span><span class="p">)</span>
 
         <span class="c1"># Evaluate loss landscapes</span>
@@ -1340,15 +1340,15 @@ PINN Lipschitz Constant: 17.1951
 </div>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
-<span class="kn">import</span> <span class="nn">torch.optim</span> <span class="k">as</span> <span class="nn">optim</span>
-<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
-<span class="kn">from</span> <span class="nn">tqdm</span> <span class="kn">import</span> <span class="n">tqdm</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nn</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch.optim</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">optim</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">tqdm</span><span class="w"> </span><span class="kn">import</span> <span class="n">tqdm</span>
 
-<span class="k">class</span> <span class="nc">HarmonicOscillator</span><span class="p">:</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">damping_coefficient</span><span class="p">,</span> <span class="n">natural_frequency</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">HarmonicOscillator</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">damping_coefficient</span><span class="p">,</span> <span class="n">natural_frequency</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">d</span> <span class="o">=</span> <span class="n">damping_coefficient</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">w0</span> <span class="o">=</span> <span class="n">natural_frequency</span>
         <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">d</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">w0</span><span class="p">,</span> <span class="s2">&quot;Damping coefficient must be less than natural frequency for underdamped oscillator&quot;</span>
@@ -1356,14 +1356,14 @@ PINN Lipschitz Constant: 17.1951
         <span class="bp">self</span><span class="o">.</span><span class="n">phi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arctan</span><span class="p">(</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">d</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">w</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">A</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">phi</span><span class="p">))</span>
         
-    <span class="k">def</span> <span class="nf">analytical_solution</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">analytical_solution</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Analytical solution to the 1D underdamped harmonic oscillator problem.&quot;&quot;&quot;</span>
         <span class="n">cos_part</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">phi</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">w</span> <span class="o">*</span> <span class="n">t</span><span class="p">)</span>
         <span class="n">exp_part</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">d</span> <span class="o">*</span> <span class="n">t</span><span class="p">)</span>
         <span class="n">u</span> <span class="o">=</span> <span class="n">exp_part</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">A</span> <span class="o">*</span> <span class="n">cos_part</span>
         <span class="k">return</span> <span class="n">u</span>
     
-    <span class="k">def</span> <span class="nf">generate_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">noise_level</span><span class="o">=</span><span class="mf">0.0</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">generate_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">noise_level</span><span class="o">=</span><span class="mf">0.0</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Generates training data for the oscillator with optional noise.&quot;&quot;&quot;</span>
         <span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">500</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
         <span class="n">u</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">analytical_solution</span><span class="p">(</span><span class="n">t</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
@@ -1374,7 +1374,7 @@ PINN Lipschitz Constant: 17.1951
         <span class="n">u_data_noisy</span> <span class="o">=</span> <span class="n">u_data</span> <span class="o">+</span> <span class="n">noise</span>
         <span class="k">return</span> <span class="n">t</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">t_data</span><span class="p">,</span> <span class="n">u_data_noisy</span>
 
-<span class="k">def</span> <span class="nf">calculate_errors</span><span class="p">(</span><span class="n">u_pred</span><span class="p">,</span> <span class="n">u_exact</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">calculate_errors</span><span class="p">(</span><span class="n">u_pred</span><span class="p">,</span> <span class="n">u_exact</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Calculate multiple error metrics between predicted and exact solutions.</span>
 <span class="sd">    </span>
@@ -1392,8 +1392,8 @@ PINN Lipschitz Constant: 17.1951
     <span class="n">max_error</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">u_pred</span> <span class="o">-</span> <span class="n">u_exact</span><span class="p">))</span>
     <span class="k">return</span> <span class="n">mse</span><span class="p">,</span> <span class="n">l2_error</span><span class="p">,</span> <span class="n">max_error</span>
 
-<span class="k">class</span> <span class="nc">NeuralNetwork</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">layer_sizes</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">NeuralNetwork</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">layer_sizes</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">NeuralNetwork</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="n">layers</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">in_size</span><span class="p">,</span> <span class="n">out_size</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">layer_sizes</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">layer_sizes</span><span class="p">[</span><span class="mi">1</span><span class="p">:]):</span>
@@ -1402,10 +1402,10 @@ PINN Lipschitz Constant: 17.1951
         <span class="n">layers</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>  <span class="c1"># Remove the last activation function</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span><span class="o">*</span><span class="n">layers</span><span class="p">)</span>
         
-    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
 
-<span class="k">def</span> <span class="nf">pinn_loss</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">t_data</span><span class="p">,</span> <span class="n">u_data</span><span class="p">,</span> <span class="n">t_physics</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">pinn_loss</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">t_data</span><span class="p">,</span> <span class="n">u_data</span><span class="p">,</span> <span class="n">t_physics</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Computes the loss for PINN, including data and physics losses.&quot;&quot;&quot;</span>
     <span class="c1"># Data loss</span>
     <span class="n">u_pred</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">t_data</span><span class="p">)</span>
@@ -1425,7 +1425,7 @@ PINN Lipschitz Constant: 17.1951
 
     <span class="k">return</span> <span class="n">loss_data</span> <span class="o">+</span> <span class="n">loss_physics</span>
 
-<span class="k">def</span> <span class="nf">train_standard_nn</span><span class="p">(</span><span class="n">ho</span><span class="p">,</span> <span class="n">noise_level</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">num_steps</span><span class="o">=</span><span class="mi">1000</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">train_standard_nn</span><span class="p">(</span><span class="n">ho</span><span class="p">,</span> <span class="n">noise_level</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">num_steps</span><span class="o">=</span><span class="mi">1000</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Trains a standard neural network and performs error analysis.&quot;&quot;&quot;</span>
     <span class="n">t</span><span class="p">,</span> <span class="n">u_exact</span><span class="p">,</span> <span class="n">t_data</span><span class="p">,</span> <span class="n">u_data</span> <span class="o">=</span> <span class="n">ho</span><span class="o">.</span><span class="n">generate_data</span><span class="p">(</span><span class="n">noise_level</span><span class="o">=</span><span class="n">noise_level</span><span class="p">)</span>
 
@@ -1462,7 +1462,7 @@ PINN Lipschitz Constant: 17.1951
     <span class="n">mse</span><span class="p">,</span> <span class="n">l2_error</span><span class="p">,</span> <span class="n">max_error</span> <span class="o">=</span> <span class="n">calculate_errors</span><span class="p">(</span><span class="n">u_pred_full</span><span class="p">,</span> <span class="n">u_exact</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">mse</span><span class="p">,</span> <span class="n">l2_error</span><span class="p">,</span> <span class="n">max_error</span><span class="p">,</span> <span class="n">u_pred_full</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">u_exact</span><span class="p">,</span> <span class="n">t_data</span><span class="p">,</span> <span class="n">u_data</span>
 
-<span class="k">def</span> <span class="nf">train_pinn</span><span class="p">(</span><span class="n">ho</span><span class="p">,</span> <span class="n">noise_level</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">num_steps</span><span class="o">=</span><span class="mi">20000</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">train_pinn</span><span class="p">(</span><span class="n">ho</span><span class="p">,</span> <span class="n">noise_level</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">num_steps</span><span class="o">=</span><span class="mi">20000</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Trains a physics-informed neural network and performs error analysis.&quot;&quot;&quot;</span>
     <span class="n">t</span><span class="p">,</span> <span class="n">u_exact</span><span class="p">,</span> <span class="n">t_data</span><span class="p">,</span> <span class="n">u_data</span> <span class="o">=</span> <span class="n">ho</span><span class="o">.</span><span class="n">generate_data</span><span class="p">(</span><span class="n">noise_level</span><span class="o">=</span><span class="n">noise_level</span><span class="p">)</span>
 
@@ -1505,7 +1505,7 @@ PINN Lipschitz Constant: 17.1951
     <span class="n">mse</span><span class="p">,</span> <span class="n">l2_error</span><span class="p">,</span> <span class="n">max_error</span> <span class="o">=</span> <span class="n">calculate_errors</span><span class="p">(</span><span class="n">u_pred_full</span><span class="p">,</span> <span class="n">u_exact</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">mse</span><span class="p">,</span> <span class="n">l2_error</span><span class="p">,</span> <span class="n">max_error</span><span class="p">,</span> <span class="n">u_pred_full</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">u_exact</span><span class="p">,</span> <span class="n">t_data</span><span class="p">,</span> <span class="n">u_data</span>
 
-<span class="k">def</span> <span class="nf">stability_analysis</span><span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">stability_analysis</span><span class="p">():</span>
     <span class="c1"># Initialize harmonic oscillator</span>
     <span class="n">ho</span> <span class="o">=</span> <span class="n">HarmonicOscillator</span><span class="p">(</span><span class="n">damping_coefficient</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">natural_frequency</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
     <span class="n">noise_levels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.11</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">)</span>  <span class="c1"># Noise levels from 0% to 10%</span>
@@ -1642,19 +1642,19 @@ PINN        - MSE: 0.003063, L2: 0.055346, Max: 0.108503
 </div>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
-<span class="kn">import</span> <span class="nn">torch.optim</span> <span class="k">as</span> <span class="nn">optim</span>
-<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
-<span class="kn">from</span> <span class="nn">tqdm</span> <span class="kn">import</span> <span class="n">tqdm</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nn</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch.optim</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">optim</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">tqdm</span><span class="w"> </span><span class="kn">import</span> <span class="n">tqdm</span>
 
 <span class="c1"># Set random seeds for reproducibility</span>
 <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
 <span class="n">torch</span><span class="o">.</span><span class="n">manual_seed</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
 
-<span class="k">class</span> <span class="nc">HarmonicOscillator</span><span class="p">:</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">damping_coefficient</span><span class="p">,</span> <span class="n">natural_frequency</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">HarmonicOscillator</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">damping_coefficient</span><span class="p">,</span> <span class="n">natural_frequency</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">d</span> <span class="o">=</span> <span class="n">damping_coefficient</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">w0</span> <span class="o">=</span> <span class="n">natural_frequency</span>
         <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">d</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">w0</span><span class="p">,</span> <span class="s2">&quot;Damping coefficient must be less than natural frequency for underdamped oscillator&quot;</span>
@@ -1662,14 +1662,14 @@ PINN        - MSE: 0.003063, L2: 0.055346, Max: 0.108503
         <span class="bp">self</span><span class="o">.</span><span class="n">phi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arctan</span><span class="p">(</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">d</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">w</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">A</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">phi</span><span class="p">))</span>
         
-    <span class="k">def</span> <span class="nf">analytical_solution</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">analytical_solution</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Analytical solution to the 1D underdamped harmonic oscillator problem.&quot;&quot;&quot;</span>
         <span class="n">cos_part</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">phi</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">w</span> <span class="o">*</span> <span class="n">t</span><span class="p">)</span>
         <span class="n">exp_part</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">d</span> <span class="o">*</span> <span class="n">t</span><span class="p">)</span>
         <span class="n">u</span> <span class="o">=</span> <span class="n">exp_part</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">A</span> <span class="o">*</span> <span class="n">cos_part</span>
         <span class="k">return</span> <span class="n">u</span>
     
-    <span class="k">def</span> <span class="nf">generate_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">noise_level</span><span class="o">=</span><span class="mf">0.0</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">generate_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">noise_level</span><span class="o">=</span><span class="mf">0.0</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Generates training data for the oscillator with optional noise.&quot;&quot;&quot;</span>
         <span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">500</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
         <span class="n">u</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">analytical_solution</span><span class="p">(</span><span class="n">t</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
@@ -1680,8 +1680,8 @@ PINN        - MSE: 0.003063, L2: 0.055346, Max: 0.108503
         <span class="n">u_data_noisy</span> <span class="o">=</span> <span class="n">u_data</span> <span class="o">+</span> <span class="n">noise</span>
         <span class="k">return</span> <span class="n">t</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">t_data</span><span class="p">,</span> <span class="n">u_data_noisy</span>
 
-<span class="k">class</span> <span class="nc">NeuralNetwork</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">layer_sizes</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">NeuralNetwork</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">layer_sizes</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">NeuralNetwork</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="n">layers</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">in_size</span><span class="p">,</span> <span class="n">out_size</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">layer_sizes</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">layer_sizes</span><span class="p">[</span><span class="mi">1</span><span class="p">:]):</span>
@@ -1690,10 +1690,10 @@ PINN        - MSE: 0.003063, L2: 0.055346, Max: 0.108503
         <span class="n">layers</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>  <span class="c1"># Remove the last activation function</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span><span class="o">*</span><span class="n">layers</span><span class="p">)</span>
         
-    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
 
-<span class="k">def</span> <span class="nf">pinn_loss</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">t_data</span><span class="p">,</span> <span class="n">u_data</span><span class="p">,</span> <span class="n">t_physics</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">pinn_loss</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">t_data</span><span class="p">,</span> <span class="n">u_data</span><span class="p">,</span> <span class="n">t_physics</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Computes the loss for PINN, including data and physics losses.&quot;&quot;&quot;</span>
     <span class="c1"># Data loss</span>
     <span class="n">u_pred</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">t_data</span><span class="p">)</span>
@@ -1713,7 +1713,7 @@ PINN        - MSE: 0.003063, L2: 0.055346, Max: 0.108503
 
     <span class="k">return</span> <span class="n">loss_data</span> <span class="o">+</span> <span class="n">loss_physics</span>
 
-<span class="k">def</span> <span class="nf">train_standard_nn</span><span class="p">(</span><span class="n">ho</span><span class="p">,</span> <span class="n">num_steps</span><span class="o">=</span><span class="mi">10000</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">train_standard_nn</span><span class="p">(</span><span class="n">ho</span><span class="p">,</span> <span class="n">num_steps</span><span class="o">=</span><span class="mi">10000</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Trains a standard neural network on clean data.&quot;&quot;&quot;</span>
     <span class="n">t</span><span class="p">,</span> <span class="n">u_exact</span><span class="p">,</span> <span class="n">t_data</span><span class="p">,</span> <span class="n">u_data</span> <span class="o">=</span> <span class="n">ho</span><span class="o">.</span><span class="n">generate_data</span><span class="p">(</span><span class="n">noise_level</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span>
 
@@ -1748,7 +1748,7 @@ PINN        - MSE: 0.003063, L2: 0.055346, Max: 0.108503
     <span class="n">error</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">((</span><span class="n">u_pred_full</span> <span class="o">-</span> <span class="n">u_exact</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">model</span><span class="p">,</span> <span class="n">error</span><span class="p">,</span> <span class="n">u_pred_full</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">u_exact</span>
 
-<span class="k">def</span> <span class="nf">train_pinn</span><span class="p">(</span><span class="n">ho</span><span class="p">,</span> <span class="n">num_steps</span><span class="o">=</span><span class="mi">20000</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">train_pinn</span><span class="p">(</span><span class="n">ho</span><span class="p">,</span> <span class="n">num_steps</span><span class="o">=</span><span class="mi">20000</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Trains a physics-informed neural network on clean data.&quot;&quot;&quot;</span>
     <span class="n">t</span><span class="p">,</span> <span class="n">u_exact</span><span class="p">,</span> <span class="n">t_data</span><span class="p">,</span> <span class="n">u_data</span> <span class="o">=</span> <span class="n">ho</span><span class="o">.</span><span class="n">generate_data</span><span class="p">(</span><span class="n">noise_level</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span>
 
@@ -1788,7 +1788,7 @@ PINN        - MSE: 0.003063, L2: 0.055346, Max: 0.108503
     <span class="n">error</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">((</span><span class="n">u_pred_full</span> <span class="o">-</span> <span class="n">u_exact</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">model</span><span class="p">,</span> <span class="n">error</span><span class="p">,</span> <span class="n">u_pred_full</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">u_exact</span>
 
-<span class="k">def</span> <span class="nf">compute_beta</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">u_exact</span><span class="p">,</span> <span class="n">noise_level</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="s1">&#39;cpu&#39;</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">compute_beta</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">u_exact</span><span class="p">,</span> <span class="n">noise_level</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="s1">&#39;cpu&#39;</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Computes the stability constant beta for a given model and noise level.</span>
 <span class="sd">    Args:</span>
@@ -1828,7 +1828,7 @@ PINN        - MSE: 0.003063, L2: 0.055346, Max: 0.108503
 
     <span class="k">return</span> <span class="n">beta</span>
 
-<span class="k">def</span> <span class="nf">stability_analysis</span><span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">stability_analysis</span><span class="p">():</span>
     <span class="c1"># Initialize harmonic oscillator</span>
     <span class="n">ho</span> <span class="o">=</span> <span class="n">HarmonicOscillator</span><span class="p">(</span><span class="n">damping_coefficient</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">natural_frequency</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
 
@@ -1913,7 +1913,7 @@ PINN        - MSE: 0.003063, L2: 0.055346, Max: 0.108503
 <span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
     <span class="n">stability_analysis</span><span class="p">()</span>
 
-<span class="k">def</span> <span class="nf">compute_local_beta</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">u_exact</span><span class="p">,</span> <span class="n">noise_level</span><span class="p">,</span> <span class="n">window_size</span><span class="o">=</span><span class="mf">0.1</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">compute_local_beta</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">u_exact</span><span class="p">,</span> <span class="n">noise_level</span><span class="p">,</span> <span class="n">window_size</span><span class="o">=</span><span class="mf">0.1</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Computes stability constant β locally across different time windows.</span>
 <span class="sd">    </span>
@@ -1965,7 +1965,7 @@ PINN        - MSE: 0.003063, L2: 0.055346, Max: 0.108503
     
     <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">local_betas</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">window_centers</span><span class="p">)</span>
 
-<span class="k">def</span> <span class="nf">analyze_stability_with_exact_solution</span><span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">analyze_stability_with_exact_solution</span><span class="p">():</span>
     <span class="c1"># Initialize harmonic oscillator</span>
     <span class="n">ho</span> <span class="o">=</span> <span class="n">HarmonicOscillator</span><span class="p">(</span><span class="n">damping_coefficient</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">natural_frequency</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
     
