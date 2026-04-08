@@ -2,7 +2,12 @@
 **/*results*
 **/*out*
 **/*.png*
+**/*.pdf*
+**/*.jpg*
+**/*.svg*
 **/*.gif*
 **/*.DS_Store*
 **/*#*
 **/*~*
+**/__pycache__/
+**/*.pyc

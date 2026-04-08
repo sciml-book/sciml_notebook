@@ -13,6 +13,18 @@
 - [Weights](adaptive-weights.ipynb)
     - PyTorch [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/sciml-book/sciml_notebook/blob/main/pinns/adaptive-wegihts.ipynb)
 
+### NTK and spectral bias in PINNs
+- [Mixed-Signal Poisson PINN](ntk-spectral-bias.ipynb)
+    - PyTorch [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/sciml-book/sciml_notebook/blob/main/pinns/ntk-spectral-bias.ipynb)
+
+### Failure modes in PINNs
+- [Convection Failure Modes](pinn-failure-modes.ipynb)
+    - PyTorch [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/sciml-book/sciml_notebook/blob/main/pinns/pinn-failure-modes.ipynb)
+
+### Optimizer benchmarks for PINNs
+- [Burgers optimizer benchmark](burgers-optimizers.ipynb)
+    - PyTorch [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/sciml-book/sciml_notebook/blob/main/pinns/burgers-optimizers.ipynb)
+
 ### Weak-boundary enforcement (1D beam)
 - [Static Beam](static.ipynb) 
     - PyTorch [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/sciml-book/sciml_notebook/blob/main/pinns/static.ipynb)
