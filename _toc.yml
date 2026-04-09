@@ -11,9 +11,13 @@ parts:
       - file: pinns/collocation.ipynb
       - file: pinns/adaptive-weights.ipynb
       - file: pinns/static.ipynb
+      - file: pinns/three-principles.ipynb
       - file: pinns/linear-elastic-fixed.ipynb
       - file: pinns/burgers.ipynb
       - file: pinns/discrete-time-burgers/discrete-time-burgers.ipynb
+      - file: pinns/ntk-spectral-bias.ipynb
+      - file: pinns/pinn-failure-modes.ipynb
+      - file: pinns/burgers-optimizers.ipynb
       - file: pinns/oscillator-analysis.ipynb
       - file: pinns/inverse-heat-parameter.ipynb
       
