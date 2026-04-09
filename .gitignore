@@ -1,13 +1,32 @@
+# Build artifacts
+site/
+_build/
+.jupyter_cache/
+
+# Environment
+.venv/
+env/
+**/__pycache__/
+**/*.pyc
+
+# OS
+**/*.DS_Store
+
+# Editor
+**/*#*
+**/*~*
+
+# Generated outputs
 **/*IRK_weight*
 **/*results*
 **/*out*
-**/*.png*
-**/*.pdf*
-**/*.jpg*
-**/*.svg*
-**/*.gif*
-**/*.DS_Store*
-**/*#*
-**/*~*
-**/__pycache__/
-**/*.pyc
+
+# Large binary files (tracked in notebooks, not in repo)
+**/*.png
+**/*.pdf
+**/*.jpg
+**/*.svg
+**/*.gif
+
+# uv
+uv.lock

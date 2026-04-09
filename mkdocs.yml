@@ -1,0 +1,121 @@
+site_name: "SciML Notebook: Companion Code"
+site_author: Krishna Kumar
+site_description: Companion Jupyter notebooks for Scientific Machine Learning
+site_url: https://sciml-book.github.io/sciml_notebook
+repo_url: https://github.com/sciml-book/sciml_notebook
+use_directory_urls: false
+repo_name: SciML Notebooks
+
+theme:
+  name: material
+  favicon: sciml-logo.png
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+
+  features:
+    - navigation.sections
+    - navigation.expand
+    - navigation.path
+    - navigation.top
+    - navigation.indexes
+    - navigation.tracking
+    - search.highlight
+    - search.share
+    - content.code.copy
+    - content.code.select
+    - content.tabs.link
+    - content.tooltips
+    - announce.dismiss
+
+  icon:
+    repo: fontawesome/brands/github
+
+plugins:
+  - search
+  - mkdocs-jupyter:
+      execute: false
+      include_source: true
+      ignore_h1_titles: true
+      show_input: true
+      theme: light
+  - git-revision-date-localized:
+      type: date
+
+markdown_extensions:
+  - abbr
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - toc:
+      permalink: true
+
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.betterem:
+      smart_enable: all
+  - pymdownx.caret
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde
+
+extra_javascript:
+  - https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js
+  - https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js
+  - javascripts/katex.js
+  - javascripts/adaptive-width.js
+
+extra_css:
+  - https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css
+  - stylesheets/extra.css
+
+nav:
+  - Home: index.md
+  - Physics-Informed Neural Networks:
+    - Harmonic Oscillator: pinns/oscillator.ipynb
+    - Poisson Equation: pinns/static.ipynb
+    - Three Principles on Poisson: pinns/three-principles.ipynb
+    - Collocation Sampling: pinns/collocation.ipynb
+    - Adaptive Weights: pinns/adaptive-weights.ipynb
+    - Linear Elasticity: pinns/linear-elastic-fixed.ipynb
+    - Burgers Equation: pinns/burgers.ipynb
+    - Discrete-Time Burgers: pinns/discrete-time-burgers/discrete-time-burgers.ipynb
+    - NTK and Spectral Bias: pinns/ntk-spectral-bias.ipynb
+    - Failure Modes: pinns/pinn-failure-modes.ipynb
+    - Optimizer Benchmark: pinns/burgers-optimizers.ipynb
+    - Oscillator Analysis: pinns/oscillator-analysis.ipynb
+    - Inverse Heat Parameter: pinns/inverse-heat-parameter.ipynb
+
+copyright: |
+  &copy; 2025 <a href="https://github.com/sciml-book" target="_blank" rel="noopener">Krishna Kumar</a>

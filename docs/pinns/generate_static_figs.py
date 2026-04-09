@@ -23,7 +23,7 @@ import os
 
 # ── Style and paths ──────────────────────────────────────────────────────────
 STYLE_PATH = os.path.join(os.path.dirname(__file__),
-                          '..', 'sciml_style.mplstyle')
+                          '..', '..', 'sciml_style.mplstyle')
 plt.style.use(STYLE_PATH)
 
 FIGS_DIR = os.path.join(os.path.dirname(__file__),

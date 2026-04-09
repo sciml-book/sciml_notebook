@@ -23,7 +23,7 @@ import torch
 import torch.nn as nn
 
 
-STYLE_PATH = ROOT / "sciml_notebook" / "sciml_style.mplstyle"
+STYLE_PATH = ROOT / "sciml_notebook" / "docs" / "sciml_style.mplstyle"
 plt.style.use(STYLE_PATH)
 torch.set_num_threads(1)
 

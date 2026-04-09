@@ -28,7 +28,7 @@ import torch.nn as nn
 from torch.nn.utils import parameters_to_vector, vector_to_parameters
 
 
-STYLE_PATH = ROOT / "sciml_notebook" / "sciml_style.mplstyle"
+STYLE_PATH = ROOT / "sciml_notebook" / "docs" / "sciml_style.mplstyle"
 plt.style.use(STYLE_PATH)
 torch.set_num_threads(1)
 torch.set_default_dtype(torch.float64)

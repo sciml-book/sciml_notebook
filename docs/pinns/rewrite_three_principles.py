@@ -17,7 +17,7 @@ from tqdm import tqdm
 
 
 ROOT = Path(__file__).resolve().parents[2]
-STYLE_PATH = ROOT / "sciml_notebook" / "sciml_style.mplstyle"
+STYLE_PATH = ROOT / "sciml_notebook" / "docs" / "sciml_style.mplstyle"
 LOCAL_FIG_DIR = ROOT / "sciml_notebook" / "pinns"
 CHAPTER_FIG_DIR = ROOT / "sciml-book" / "chapters" / "06-pinns" / "figs"
 
