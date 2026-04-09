@@ -25,7 +25,7 @@ jobs:
         uses: astral-sh/setup-uv@v4
 
       - name: Install dependencies
-        run: uv pip install --system -e ".[docs]"
+        run: uv pip install --system ".[docs]"
 
       - name: Build site
         run: mkdocs build
