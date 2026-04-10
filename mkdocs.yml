@@ -49,6 +49,12 @@ plugins:
       ignore_h1_titles: true
       show_input: true
       theme: light
+      ignore:
+        - "**/.ipynb_checkpoints/**"
+        - "**/env/**"
+        - "**/.venv/**"
+        - "**/__pycache__/**"
+        - "**/*.py"
   - git-revision-date-localized:
       type: date
 

@@ -1,6 +1,1 @@
-numpy
-torch
-matplotlib
-jupyter
-imageio
-tqdm
+-r ../../requirements.txt

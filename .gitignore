@@ -1,6 +1,7 @@
 # Build artifacts
 site/
 _build/
+.cache/
 .jupyter_cache/
 
 # Environment
